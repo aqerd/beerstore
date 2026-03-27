@@ -14,14 +14,14 @@ import {
 } from '@/components/ui/dropdown-menu'
 import { Badge } from '@/components/ui/badge'
 import { StoreSwitcher } from './store-switcher'
-import { getLowStockItems } from '@/lib/mock-data'
 import { useCRM } from '@/lib/store'
+import { useInventory } from '@/hooks/api/useInventory'
 import { useState, useEffect } from 'react'
 
 export function Header() {
   const [mounted, setMounted] = useState(false)
   const { currentStore } = useCRM()
-  const lowStockItems = getLowStockItems(currentStore?.id)
+  const { lowStockItems, loading } = useInventory(currentStore?.id)
   const alertCount = lowStockItems.length
 
   useEffect(() => {

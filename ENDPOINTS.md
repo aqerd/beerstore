@@ -62,7 +62,7 @@
 
 ## 5. Техническое обслуживание
 ### Маршрутный лист
-`GET /maintenance/tasks?technicianId={id}`
+`GET /maintenance/tasks`
 - **Response**: `MaintenanceTask[]`
 
 ### Завершение задачи
@@ -85,7 +85,7 @@
 
 ---
 
-## 7. Аналитика (Владелец)
+## 7. Аналитика (Управляющий точкой)
 ### Дашборд KPI
 `GET /reports/dashboard?storeId={id}`
 - **Response**: `{ revenue: number, salesCount: number, avgCheck: number }`
@@ -96,3 +96,11 @@
 
 ### Эффективность персонала
 `GET /reports/staff-performance?storeId={id}`
+
+### Аналитика по пиву (Статистика в БД)
+`GET /reports/beer-stats?productId={id}&storeId={id}&startDate={iso}&endDate={iso}`
+- **Response**: `{ productId: string, totalLiters: number, revenue: number, salesCount: number, avgDailySales: number, stockHistory: { date: string, quantity: number }[] }`
+
+### Топ популярных сортов
+`GET /reports/top-beers?limit=10&storeId={id}`
+- **Response**: `Product[]` с дополнительными полями `totalLiters` и `rank`

@@ -3,13 +3,28 @@
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Progress } from '@/components/ui/progress'
 import { Badge } from '@/components/ui/badge'
-import { getTopProducts } from '@/lib/mock-data'
 import { useCRM } from '@/lib/store'
+import { useTopProducts } from '@/hooks/api/useTopProducts'
 import { BEER_CATEGORIES } from '@/lib/types'
 
 export function TopProducts() {
   const { currentStore } = useCRM()
-  const topProducts = getTopProducts(7, currentStore?.id, 6)
+  const { topProducts, loading } = useTopProducts(7, currentStore?.id, 6)
+  
+  if (loading) {
+    return (
+      <Card className="bg-card border-border animate-pulse">
+        <CardHeader className="pb-3">
+          <div className="h-6 w-48 bg-muted rounded" />
+        </CardHeader>
+        <CardContent className="space-y-4">
+          {[1, 2, 3].map(i => (
+            <div key={i} className="h-12 w-full bg-muted rounded" />
+          ))}
+        </CardContent>
+      </Card>
+    )
+  }
   
   const maxRevenue = topProducts[0]?.revenue || 1
 

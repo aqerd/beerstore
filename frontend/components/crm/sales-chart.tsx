@@ -10,38 +10,25 @@ import {
   XAxis,
   YAxis,
 } from 'recharts'
-import { dailyStats, stores } from '@/lib/mock-data'
 import { useCRM } from '@/lib/store'
+import { useSalesChart } from '@/hooks/api/useSalesChart'
 
 export function SalesChart() {
   const { currentStore } = useCRM()
+  const { data: chartData, loading } = useSalesChart(14, currentStore?.id)
 
-  
-  const chartData = dailyStats
-    .filter((stat) => !currentStore || stat.storeId === currentStore.id)
-    .reduce(
-      (acc, stat) => {
-        const existing = acc.find((d) => d.date === stat.date)
-        if (existing) {
-          existing.revenue += stat.revenue
-          existing.sales += stat.salesCount
-        } else {
-          acc.push({
-            date: stat.date,
-            revenue: stat.revenue,
-            sales: stat.salesCount,
-            displayDate: new Date(stat.date).toLocaleDateString('ru-RU', {
-              day: 'numeric',
-              month: 'short',
-            }),
-          })
-        }
-        return acc
-      },
-      [] as { date: string; revenue: number; sales: number; displayDate: string }[]
+  if (loading) {
+    return (
+      <Card className="bg-card border-border col-span-full lg:col-span-2 animate-pulse">
+        <CardHeader className="pb-2">
+          <div className="h-6 w-48 bg-muted rounded" />
+        </CardHeader>
+        <CardContent>
+          <div className="h-[300px] w-full bg-muted rounded" />
+        </CardContent>
+      </Card>
     )
-    .sort((a, b) => a.date.localeCompare(b.date))
-    .slice(-14) 
+  }
 
   return (
     <Card className="bg-card border-border col-span-full lg:col-span-2">

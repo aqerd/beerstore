@@ -3,13 +3,28 @@
 import { AlertTriangle } from 'lucide-react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
-import { getLowStockItems } from '@/lib/mock-data'
 import { useCRM } from '@/lib/store'
+import { useInventory } from '@/hooks/api/useInventory'
 import Link from 'next/link'
 
 export function InventoryAlerts() {
   const { currentStore } = useCRM()
-  const lowStockItems = getLowStockItems(currentStore?.id).slice(0, 5)
+  const { lowStockItems, loading } = useInventory(currentStore?.id)
+
+  if (loading) {
+    return (
+      <Card className="bg-card border-border animate-pulse">
+        <CardHeader className="pb-3">
+          <div className="h-6 w-32 bg-muted rounded" />
+        </CardHeader>
+        <CardContent className="space-y-3">
+          {[1, 2].map(i => (
+            <div key={i} className="h-16 w-full bg-muted rounded" />
+          ))}
+        </CardContent>
+      </Card>
+    )
+  }
 
   if (lowStockItems.length === 0) {
     return (

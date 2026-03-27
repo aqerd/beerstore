@@ -18,19 +18,20 @@ import {
   PopoverTrigger,
 } from '@/components/ui/popover'
 import { useCRM } from '@/lib/store'
-import { stores } from '@/lib/mock-data'
+import { useStores } from '@/hooks/api/useStores'
 import { useState, useEffect } from 'react'
 
 export function StoreSwitcher() {
   const [mounted, setMounted] = useState(false)
   const [open, setOpen] = useState(false)
   const { currentStore, setCurrentStore } = useCRM()
+  const { stores, loading } = useStores()
 
   useEffect(() => {
     setMounted(true)
   }, [])
 
-  const displayName = !mounted 
+  const displayName = !mounted || loading
     ? 'Загрузка...' 
     : currentStore
     ? currentStore.name.split(' - ')[1] || currentStore.name

@@ -2,32 +2,19 @@
 
 import { createContext, useContext } from 'react'
 import type { User, Store } from './types'
-import { users, stores } from './mock-data'
 
 export interface CRMState {
-  currentUser: User
+  currentUser: User | null
   currentStore: Store | null 
   setCurrentStore: (store: Store | null) => void
-  setCurrentUser: (user: User) => void
+  setCurrentUser: (user: User | null) => void
 }
 
-
-const defaultUser = users[0]
-const defaultStore = null 
-
 export const CRMContext = createContext<CRMState>({
-  currentUser: defaultUser,
-  currentStore: defaultStore,
+  currentUser: null,
+  currentStore: null,
   setCurrentStore: () => {},
   setCurrentUser: () => {},
 })
 
 export const useCRM = () => useContext(CRMContext)
-
-
-export const initialState = {
-  currentUser: defaultUser,
-  currentStore: defaultStore,
-  stores,
-  users,
-}

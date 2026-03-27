@@ -8,7 +8,7 @@ import { StatsCard } from '@/components/crm/stats-card'
 import { RecentSales } from '@/components/crm/recent-sales'
 import { TopProducts } from '@/components/crm/top-products'
 import { useCRM } from '@/lib/store'
-import { getTodayStats, getWeekStats, getLowStockItems, sales } from '@/lib/mock-data'
+import { useDashboard } from '@/hooks/api/useDashboard'
 import {
   AreaChart,
   Area,
@@ -22,12 +22,13 @@ import {
 function DashboardContent() {
   const [mounted, setMounted] = useState(false)
   const { currentStore } = useCRM()
+  const { data: dashboardData, loading: dashboardLoading } = useDashboard(currentStore?.id)
   
   useEffect(() => {
     setMounted(true)
   }, [])
 
-  if (!mounted) {
+  if (!mounted || dashboardLoading || !dashboardData) {
     return (
       <div className="flex flex-col gap-6 animate-pulse">
         <div className="h-8 w-48 bg-muted rounded" />
@@ -40,40 +41,7 @@ function DashboardContent() {
     )
   }
 
-  const todayStats = getTodayStats(currentStore?.id)
-  const weekStats = getWeekStats(currentStore?.id)
-  const lowStockCount = getLowStockItems(currentStore?.id).length
-
-  
-  const getChartData = () => {
-    const days = 7
-    const data = []
-    const today = new Date('2025-03-11')
-
-    for (let i = days - 1; i >= 0; i--) {
-      const date = new Date(today)
-      date.setDate(date.getDate() - i)
-      const dateStr = date.toISOString().split('T')[0]
-      const dayName = date.toLocaleDateString('ru-RU', { weekday: 'short' })
-
-      const daySales = sales.filter(
-        (s) =>
-          s.createdAt.startsWith(dateStr) &&
-          (!currentStore || s.storeId === currentStore.id)
-      )
-
-      data.push({
-        name: dayName,
-        date: dateStr,
-        revenue: daySales.reduce((sum, s) => sum + s.total, 0),
-        sales: daySales.length,
-      })
-    }
-
-    return data
-  }
-
-  const chartData = getChartData()
+  const { todayStats, weekStats, chartData, lowStockCount } = dashboardData
 
   return (
     <div className="flex flex-col gap-6">

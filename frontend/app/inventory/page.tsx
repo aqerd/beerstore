@@ -23,8 +23,9 @@ import {
 import { Badge } from '@/components/ui/badge'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Progress } from '@/components/ui/progress'
-import { inventory, stores, getProductById, getLowStockItems } from '@/lib/mock-data'
 import { useCRM } from '@/lib/store'
+import { useInventory } from '@/hooks/api/useInventory'
+import { useStores } from '@/hooks/api/useStores'
 import { BEER_CATEGORIES } from '@/lib/types'
 
 function InventoryContent() {
@@ -33,29 +34,39 @@ function InventoryContent() {
   const [storeFilter, setStoreFilter] = useState<string>(currentStore?.id || 'all')
   const [statusFilter, setStatusFilter] = useState<string>('all')
 
+  const { inventory, lowStockItems, loading: inventoryLoading } = useInventory(
+    storeFilter === 'all' ? undefined : storeFilter
+  )
+  const { stores, loading: storesLoading } = useStores()
+
+  if (inventoryLoading || storesLoading) {
+    return (
+      <div className="space-y-6 animate-pulse">
+        <div className="h-12 w-48 bg-muted rounded" />
+        <div className="grid gap-4 md:grid-cols-4">
+          {[1, 2, 3, 4].map(i => (
+            <div key={i} className="h-24 bg-card rounded-xl" />
+          ))}
+        </div>
+      </div>
+    )
+  }
+
   const filteredInventory = inventory
-    .map((inv) => ({
-      ...inv,
-      product: getProductById(inv.productId)!,
-    }))
-    .filter((inv) => inv.product)
     .filter((inv) => {
       const matchesSearch = inv.product.name
         .toLowerCase()
         .includes(searchQuery.toLowerCase())
-      const matchesStore = storeFilter === 'all' || inv.storeId === storeFilter
       const isLowStock = inv.quantity <= inv.minQuantity
       const matchesStatus =
         statusFilter === 'all' ||
         (statusFilter === 'low' && isLowStock) ||
         (statusFilter === 'ok' && !isLowStock)
-      return matchesSearch && matchesStore && matchesStatus
+      return matchesSearch && matchesStatus
     })
     .sort((a, b) => a.quantity - b.quantity)
 
-  const lowStockCount = getLowStockItems(
-    storeFilter === 'all' ? undefined : storeFilter
-  ).length
+  const lowStockCount = lowStockItems.length
 
   const totalQuantity = filteredInventory.reduce(
     (sum, inv) => sum + inv.quantity,

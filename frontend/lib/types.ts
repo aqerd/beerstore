@@ -1,6 +1,6 @@
 
 
-export type UserRole = 'admin' | 'manager' | 'seller' | 'technician' | 'purchaser'
+export type UserRole = 'bartender' | 'purchaser' | 'manager'
 
 export interface User {
   id: string
@@ -187,11 +187,9 @@ export const BEER_CATEGORIES: Record<BeerCategory, string> = {
 }
 
 export const USER_ROLES: Record<UserRole, string> = {
-  admin: 'Администратор',
-  manager: 'Менеджер',
-  seller: 'Продавец',
-  technician: 'Техник',
+  bartender: 'Бармен-кассир',
   purchaser: 'Менеджер по закупкам',
+  manager: 'Управляющий точкой',
 }
 
 export const PAYMENT_METHODS = {
