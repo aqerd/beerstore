@@ -30,16 +30,10 @@ import {
   DialogTitle,
   DialogTrigger,
 } from '@/components/ui/dialog'
-import {
-  sales,
-  stores,
-  getProductById,
-  getUserById,
-  getCustomerById,
-  getTodayStats,
-  getWeekStats,
-} from '@/lib/mock-data'
 import { useCRM } from '@/lib/store'
+import { useSales } from '@/hooks/api/useSales'
+import { useDashboard } from '@/hooks/api/useDashboard'
+import { useStores } from '@/hooks/api/useStores'
 import { PAYMENT_METHODS } from '@/lib/types'
 
 function SalesContent() {
@@ -47,19 +41,33 @@ function SalesContent() {
   const [searchQuery, setSearchQuery] = useState('')
   const [storeFilter, setStoreFilter] = useState<string>(currentStore?.id || 'all')
   const [paymentFilter, setPaymentFilter] = useState<string>('all')
-  const [selectedSale, setSelectedSale] = useState<typeof sales[0] | null>(null)
+  const [selectedSale, setSelectedSale] = useState<any>(null)
 
-  const todayStats = getTodayStats(storeFilter === 'all' ? undefined : storeFilter)
-  const weekStats = getWeekStats(storeFilter === 'all' ? undefined : storeFilter)
+  const { sales, loading: salesLoading } = useSales(storeFilter === 'all' ? undefined : storeFilter)
+  const { data: dashboardData, loading: dashboardLoading } = useDashboard(storeFilter === 'all' ? undefined : storeFilter)
+  const { stores, loading: storesLoading } = useStores()
+
+  if (salesLoading || dashboardLoading || storesLoading || !dashboardData) {
+    return (
+      <div className="space-y-6 animate-pulse">
+        <div className="h-12 w-48 bg-muted rounded" />
+        <div className="grid gap-4 md:grid-cols-4">
+          {[1, 2, 3, 4].map(i => (
+            <div key={i} className="h-24 bg-card rounded-xl" />
+          ))}
+        </div>
+      </div>
+    )
+  }
+
+  const { todayStats, weekStats } = dashboardData
 
   const filteredSales = sales
-    .filter((sale) => {
-      const customer = sale.customerId ? getCustomerById(sale.customerId) : null
+    .filter((sale: any) => {
       const matchesSearch =
         !searchQuery ||
         sale.id.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        customer?.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        customer?.phone.includes(searchQuery)
+        sale.customerName?.toLowerCase().includes(searchQuery.toLowerCase())
       const matchesStore = storeFilter === 'all' || sale.storeId === storeFilter
       const matchesPayment =
         paymentFilter === 'all' || sale.paymentMethod === paymentFilter
@@ -222,11 +230,7 @@ function SalesContent() {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {filteredSales.map((sale) => {
-                const customer = sale.customerId
-                  ? getCustomerById(sale.customerId)
-                  : null
-                const seller = getUserById(sale.sellerId)
+              {filteredSales.map((sale: any) => {
                 return (
                   <Dialog key={sale.id}>
                     <DialogTrigger asChild>
@@ -243,31 +247,29 @@ function SalesContent() {
                           <div className="flex items-center gap-2">
                             <Avatar className="h-7 w-7">
                               <AvatarFallback className="text-xs bg-primary/10 text-primary">
-                                {customer ? getInitials(customer.name) : 'Г'}
+                                {sale.customerName ? getInitials(sale.customerName) : 'Г'}
                               </AvatarFallback>
                             </Avatar>
                             <span className="text-sm">
-                              {customer?.name || 'Гость'}
+                              {sale.customerName || 'Гость'}
                             </span>
                           </div>
                         </TableCell>
                         <TableCell>
-                          <Badge variant="outline">
-                            {getStoreName(sale.storeId)}
-                          </Badge>
+                          <Badge variant="outline">{getStoreName(sale.storeId)}</Badge>
                         </TableCell>
                         <TableCell className="text-muted-foreground text-sm">
-                          {seller?.name.split(' ')[0]}
+                          {sale.sellerName || 'Сотрудник'}
                         </TableCell>
                         <TableCell>
-                          <div className="flex items-center gap-2">
+                          <div className="flex items-center gap-1">
                             {getPaymentIcon(sale.paymentMethod)}
-                            <span className="text-sm text-muted-foreground">
-                              {PAYMENT_METHODS[sale.paymentMethod]}
+                            <span className="text-xs">
+                              {PAYMENT_METHODS[sale.paymentMethod as keyof typeof PAYMENT_METHODS]}
                             </span>
                           </div>
                         </TableCell>
-                        <TableCell className="text-muted-foreground text-sm">
+                        <TableCell className="text-xs text-muted-foreground">
                           {formatDate(sale.createdAt)}
                         </TableCell>
                         <TableCell className="text-right font-medium">
@@ -275,57 +277,35 @@ function SalesContent() {
                         </TableCell>
                       </TableRow>
                     </DialogTrigger>
-                    <DialogContent className="sm:max-w-[500px]">
+                    <DialogContent className="max-w-md bg-card border-border">
                       <DialogHeader>
                         <DialogTitle>Чек #{sale.id.split('-')[1]}</DialogTitle>
                       </DialogHeader>
-                      <div className="space-y-4">
-                        <div className="flex justify-between text-sm">
+                      <div className="space-y-4 py-4">
+                        <div className="flex justify-between text-sm border-b border-border pb-2">
                           <span className="text-muted-foreground">Дата:</span>
                           <span>{formatDate(sale.createdAt)}</span>
                         </div>
-                        <div className="flex justify-between text-sm">
-                          <span className="text-muted-foreground">Магазин:</span>
-                          <span>{getStoreName(sale.storeId)}</span>
-                        </div>
-                        <div className="flex justify-between text-sm">
+                        <div className="flex justify-between text-sm border-b border-border pb-2">
                           <span className="text-muted-foreground">Продавец:</span>
-                          <span>{seller?.name}</span>
+                          <span>{sale.sellerName || 'Сотрудник'}</span>
                         </div>
-                        <div className="flex justify-between text-sm">
+                        <div className="flex justify-between text-sm border-b border-border pb-2">
                           <span className="text-muted-foreground">Клиент:</span>
-                          <span>{customer?.name || 'Гость'}</span>
+                          <span>{sale.customerName || 'Гость'}</span>
                         </div>
-                        <div className="border-t border-border pt-4 space-y-2">
-                          <p className="font-medium">Позиции:</p>
-                          {sale.items.map((item, idx) => {
-                            const product = getProductById(item.productId)
+                        <div className="space-y-2">
+                          <p className="text-sm font-medium">Товары:</p>
+                          {sale.items.map((item: any, idx: number) => {
                             return (
-                              <div
-                                key={idx}
-                                className="flex justify-between text-sm"
-                              >
-                                <span>
-                                  {product?.name} x {item.quantity}л
-                                </span>
+                              <div key={idx} className="flex justify-between text-sm">
+                                <span>Товар #{item.productId.split('-')[1]} x {item.quantity}л</span>
                                 <span>{item.total.toLocaleString('ru-RU')} ₽</span>
                               </div>
                             )
                           })}
                         </div>
-                        {sale.bonusUsed > 0 && (
-                          <div className="flex justify-between text-sm text-success">
-                            <span>Списано бонусов:</span>
-                            <span>-{sale.bonusUsed} ₽</span>
-                          </div>
-                        )}
-                        {sale.bonusEarned > 0 && (
-                          <div className="flex justify-between text-sm text-primary">
-                            <span>Начислено бонусов:</span>
-                            <span>+{sale.bonusEarned}</span>
-                          </div>
-                        )}
-                        <div className="border-t border-border pt-4 flex justify-between font-medium text-lg">
+                        <div className="flex justify-between font-bold text-lg pt-2 border-t border-border">
                           <span>Итого:</span>
                           <span>{sale.total.toLocaleString('ru-RU')} ₽</span>
                         </div>

@@ -3,15 +3,32 @@
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Avatar, AvatarFallback } from '@/components/ui/avatar'
 import { Badge } from '@/components/ui/badge'
-import { getRecentSales, getProductById } from '@/lib/mock-data'
 import { useCRM } from '@/lib/store'
+import { useRecentSales } from '@/hooks/api/useRecentSales'
 import { PAYMENT_METHODS } from '@/lib/types'
 import { formatDistanceToNow } from 'date-fns'
 import { ru } from 'date-fns/locale'
 
 export function RecentSales() {
   const { currentStore } = useCRM()
-  const recentSales = getRecentSales(8, currentStore?.id)
+  const { sales: recentSales, loading } = useRecentSales(8, currentStore?.id)
+
+  if (loading) {
+    return (
+      <Card className="bg-card border-border">
+        <CardHeader className="pb-3">
+          <CardTitle className="text-lg font-semibold text-muted-foreground animate-pulse">
+            Загрузка...
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          {[1, 2, 3, 4].map(i => (
+            <div key={i} className="h-12 w-full bg-muted rounded animate-pulse" />
+          ))}
+        </CardContent>
+      </Card>
+    )
+  }
 
   const formatTime = (dateStr: string) => {
     try {
@@ -41,7 +58,6 @@ export function RecentSales() {
       </CardHeader>
       <CardContent className="space-y-4">
         {recentSales.map((sale) => {
-          const firstProduct = getProductById(sale.items[0]?.productId)
           return (
             <div
               key={sale.id}
@@ -49,15 +65,15 @@ export function RecentSales() {
             >
               <Avatar className="h-9 w-9">
                 <AvatarFallback className="bg-primary/10 text-primary text-xs">
-                  {sale.customer ? getInitials(sale.customer.name) : 'Г'}
+                  {sale.customerName ? getInitials(sale.customerName) : 'Г'}
                 </AvatarFallback>
               </Avatar>
               <div className="flex-1 space-y-1">
                 <p className="text-sm font-medium leading-none">
-                  {sale.customer?.name || 'Гость'}
+                  {sale.customerName || 'Гость'}
                 </p>
                 <p className="text-xs text-muted-foreground">
-                  {firstProduct?.name}
+                  {sale.productName}
                   {sale.items.length > 1 && ` +${sale.items.length - 1}`}
                 </p>
               </div>

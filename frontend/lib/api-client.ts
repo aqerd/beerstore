@@ -2,10 +2,16 @@ import {
   User, Store, Product, Sale, Customer, Supplier, 
   SupplyOrder, Shift, MaintenanceTask, KegTapAction, WriteOff, DailyStat 
 } from './types';
+import * as mocks from './mock-data';
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080/api/v1';
+const USE_MOCKS = process.env.NEXT_PUBLIC_USE_MOCKS === 'true'; 
 
 async function request<T>(path: string, options?: RequestInit): Promise<T> {
+  if (USE_MOCKS) {
+    return mockRequest<T>(path, options);
+  }
+
   const response = await fetch(`${API_BASE_URL}${path}`, {
     ...options,
     headers: {
@@ -19,6 +25,29 @@ async function request<T>(path: string, options?: RequestInit): Promise<T> {
   }
 
   return response.json();
+}
+
+
+async function mockRequest<T>(path: string, options?: RequestInit): Promise<T> {
+  await new Promise(resolve => setTimeout(resolve, 500)); 
+
+  if (path.startsWith('/stores')) return mocks.stores as any;
+  if (path.startsWith('/products')) return mocks.products as any;
+  if (path.startsWith('/sales')) return mocks.sales as any;
+  if (path.startsWith('/inventory')) return mocks.inventory as any;
+  if (path.startsWith('/reports/dashboard')) {
+    const storeId = new URLSearchParams(path.split('?')[1]).get('storeId');
+    return {
+      todayStats: mocks.getTodayStats(storeId || undefined),
+      weekStats: mocks.getWeekStats(storeId || undefined),
+      lowStockCount: mocks.getLowStockItems(storeId || undefined).length,
+      chartData: [], 
+    } as any;
+  }
+  if (path.startsWith('/reports/daily-stats')) return mocks.dailyStats as any;
+  if (path.startsWith('/auth/login')) return { user: mocks.users[0], token: 'mock-token' } as any;
+  
+  return [] as any;
 }
 
 export const api = {
@@ -52,8 +81,8 @@ export const api = {
 
   
   maintenance: {
-    getRouteSheet: (technicianId: string) => 
-      request<MaintenanceTask[]>(`/maintenance/tasks?technicianId=${technicianId}`),
+    getRouteSheet: () => 
+      request<MaintenanceTask[]>('/maintenance/tasks'),
     completeTask: (taskId: string, details: { partsUsed?: string[]; notes?: string }) => 
       request<MaintenanceTask>(`/maintenance/tasks/${taskId}/complete`, { 
         method: 'POST', 
@@ -107,6 +136,12 @@ export const api = {
       request<any>(`/reports/financials?startDate=${params.startDate}&endDate=${params.endDate}`),
     getStaffPerformance: (storeId?: string) => 
       request<any>(`/reports/staff-performance${storeId ? `?storeId=${storeId}` : ''}`),
+    getBeerStats: (params: { storeId?: string; productId?: string; startDate?: string; endDate?: string }) => {
+      const query = new URLSearchParams(params as any).toString();
+      return request<any>(`/reports/beer-stats?${query}`);
+    },
+    getTopBeers: (limit = 10, storeId?: string) => 
+      request<any>(`/reports/top-beers?limit=${limit}${storeId ? `&storeId=${storeId}` : ''}`),
   },
 
   

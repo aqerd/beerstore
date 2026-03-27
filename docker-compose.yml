@@ -22,17 +22,18 @@ services:
     depends_on:
       - db-go
     environment:
-      - DB_URL=postgres://${POSTGRES_USER}:${POSTGRES_PASSWORD}@db-go:5432/${POSTGRES_DB}
+      - DB_URL=mysql://root:${DB_PASSWORD}@db-go:3306/golden_liquid
 
   db-go:
     profiles: ["go"]
-    image: postgres:15-alpine
+    image: mysql:8.0
     environment:
-      - POSTGRES_USER=${POSTGRES_USER}
-      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
-      - POSTGRES_DB=${POSTGRES_DB}
+      - MYSQL_ROOT_PASSWORD=${DB_PASSWORD}
+      - MYSQL_DATABASE=golden_liquid
     ports:
-      - "5432:5432"
+      - "3306:3306"
+    volumes:
+      - ./database/mysql-init.sql:/docker-entrypoint-initdb.d/init.sql
 
   backend-java:
     profiles: ["java"]
@@ -44,17 +45,15 @@ services:
     depends_on:
       - db-java
     environment:
-      - DB_URL=jdbc:postgresql://db-java:5432/${POSTGRES_DB}
+      - MONGO_URL=mongodb://db-java:27017/golden_liquid
 
   db-java:
     profiles: ["java"]
-    image: postgres:15-alpine
-    environment:
-      - POSTGRES_USER=${POSTGRES_USER}
-      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
-      - POSTGRES_DB=${POSTGRES_DB}
+    image: mongo:6.0
     ports:
-      - "5433:5432"
+      - "27017:27017"
+    volumes:
+      - ./database/mongo-init.js:/docker-entrypoint-initdb.d/mongo-init.js:ro
 
   backend-python:
     profiles: ["python"]
@@ -66,14 +65,16 @@ services:
     depends_on:
       - db-python
     environment:
-      - DB_URL=postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@db-python:5432/${POSTGRES_DB}
+      - DB_URL=postgresql://${DB_USER}:${DB_PASSWORD}@db-python:5432/${DB_NAME}
 
   db-python:
     profiles: ["python"]
     image: postgres:15-alpine
     environment:
-      - POSTGRES_USER=${POSTGRES_USER}
-      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
-      - POSTGRES_DB=${POSTGRES_DB}
+      - POSTGRES_USER=${DB_USER}
+      - POSTGRES_PASSWORD=${DB_PASSWORD}
+      - POSTGRES_DB=${DB_NAME}
     ports:
-      - "5434:5432"
+      - "5432:5432"
+    volumes:
+      - ./database/postgres-init.sql:/docker-entrypoint-initdb.d/init.sql
