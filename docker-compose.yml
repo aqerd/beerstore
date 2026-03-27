@@ -34,6 +34,11 @@ services:
       - "3306:3306"
     volumes:
       - ./database/mysql-init.sql:/docker-entrypoint-initdb.d/init.sql
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
 
   backend-java:
     profiles: ["java"]
@@ -43,7 +48,8 @@ services:
     ports:
       - "${BACKEND_PORT:-8080}:8080"
     depends_on:
-      - db-java
+      db-java:
+        condition: service_healthy
     environment:
       - MONGO_URL=mongodb://db-java:27017/golden_liquid
 
@@ -54,6 +60,11 @@ services:
       - "27017:27017"
     volumes:
       - ./database/mongo-init.js:/docker-entrypoint-initdb.d/mongo-init.js:ro
+    healthcheck:
+      test: echo 'db.runCommand("ping").ok' | mongosh localhost:27017/test --quiet
+      interval: 10s
+      timeout: 5s
+      retries: 5
 
   backend-python:
     profiles: ["python"]
@@ -63,7 +74,8 @@ services:
     ports:
       - "${BACKEND_PORT:-8080}:8080"
     depends_on:
-      - db-python
+      db-python:
+        condition: service_healthy
     environment:
       - DB_URL=postgresql://${DB_USER}:${DB_PASSWORD}@db-python:5432/${DB_NAME}
 
@@ -78,3 +90,8 @@ services:
       - "5432:5432"
     volumes:
       - ./database/postgres-init.sql:/docker-entrypoint-initdb.d/init.sql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER} -d ${DB_NAME}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
