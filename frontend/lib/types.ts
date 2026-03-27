@@ -1,6 +1,6 @@
 
 
-export type UserRole = 'admin' | 'manager' | 'seller'
+export type UserRole = 'admin' | 'manager' | 'seller' | 'technician' | 'purchaser'
 
 export interface User {
   id: string
@@ -132,6 +132,49 @@ export interface DailyStat {
 }
 
 
+export interface Shift {
+  id: string
+  userId: string
+  storeId: string
+  openedAt: string
+  closedAt?: string
+  startBalance: number
+  endBalance?: number
+  totalSales: number
+}
+
+export interface MaintenanceTask {
+  id: string
+  storeId: string
+  technicianId: string
+  type: 'cleaning' | 'repair' | 'maintenance'
+  status: 'pending' | 'in_progress' | 'completed' | 'cancelled'
+  description: string
+  scheduledAt: string
+  completedAt?: string
+  partsUsed?: string[]
+}
+
+export interface KegTapAction {
+  id: string
+  storeId: string
+  productId: string
+  tappedAt: string
+  finishedAt?: string
+  isCurrentlyTapped: boolean
+}
+
+export interface WriteOff {
+  id: string
+  storeId: string
+  productId: string
+  quantity: number
+  reason: 'sour' | 'foam' | 'cleaning' | 'other'
+  createdAt: string
+  managerId: string
+}
+
+
 export const BEER_CATEGORIES: Record<BeerCategory, string> = {
   light: 'Светлое',
   dark: 'Тёмное',
@@ -147,6 +190,8 @@ export const USER_ROLES: Record<UserRole, string> = {
   admin: 'Администратор',
   manager: 'Менеджер',
   seller: 'Продавец',
+  technician: 'Техник',
+  purchaser: 'Менеджер по закупкам',
 }
 
 export const PAYMENT_METHODS = {
