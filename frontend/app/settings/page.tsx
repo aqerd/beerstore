@@ -64,11 +64,11 @@ function SettingsContent() {
               <div className="grid gap-4 md:grid-cols-2">
                 <div className="space-y-2">
                   <Label htmlFor="name">ФИО</Label>
-                  <Input id="name" defaultValue={currentUser.name} />
+                  <Input id="name" defaultValue={currentUser?.name || ''} />
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="email">Email</Label>
-                  <Input id="email" type="email" defaultValue={currentUser.email} />
+                  <Input id="email" type="email" defaultValue={currentUser?.email || ''} />
                 </div>
               </div>
               <div className="space-y-2">

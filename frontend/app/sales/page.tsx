@@ -35,6 +35,7 @@ import { useSales } from '@/hooks/api/useSales'
 import { useDashboard } from '@/hooks/api/useDashboard'
 import { useStores } from '@/hooks/api/useStores'
 import { PAYMENT_METHODS } from '@/lib/types'
+import { CrmEmptyState } from '@/components/crm/crm-empty-state'
 
 function SalesContent() {
   const { currentStore } = useCRM()
@@ -43,11 +44,11 @@ function SalesContent() {
   const [paymentFilter, setPaymentFilter] = useState<string>('all')
   const [selectedSale, setSelectedSale] = useState<any>(null)
 
-  const { sales, loading: salesLoading } = useSales(storeFilter === 'all' ? undefined : storeFilter)
-  const { data: dashboardData, loading: dashboardLoading } = useDashboard(storeFilter === 'all' ? undefined : storeFilter)
+  const { sales, loading: salesLoading, error: salesError } = useSales(storeFilter === 'all' ? undefined : storeFilter)
+  const { data: dashboardData, loading: dashboardLoading, error: dashboardError } = useDashboard(storeFilter === 'all' ? undefined : storeFilter)
   const { stores, loading: storesLoading } = useStores()
 
-  if (salesLoading || dashboardLoading || storesLoading || !dashboardData) {
+  if (salesLoading || dashboardLoading || storesLoading) {
     return (
       <div className="space-y-6 animate-pulse">
         <div className="h-12 w-48 bg-muted rounded" />
@@ -57,6 +58,16 @@ function SalesContent() {
           ))}
         </div>
       </div>
+    )
+  }
+
+  if (salesError || dashboardError || !dashboardData) {
+    return (
+      <CrmEmptyState
+        icon={Receipt}
+        title="Нет данных"
+        description="Не удалось загрузить продажи или сводку. Возможно, база данных пуста или сервер недоступен."
+      />
     )
   }
 
@@ -191,10 +202,10 @@ function SalesContent() {
                 <SelectValue placeholder="Магазин" />
               </SelectTrigger>
               <SelectContent>
-                {}
+                <SelectItem value="all">Все магазины</SelectItem>
                 {stores.map((store) => (
                   <SelectItem key={store.id} value={store.id}>
-                    {store.name.split(' - ')[1]}
+                    {store.name.split(' - ')[1] ?? store.name}
                   </SelectItem>
                 ))}
               </SelectContent>
@@ -230,6 +241,18 @@ function SalesContent() {
               </TableRow>
             </TableHeader>
             <TableBody>
+              {filteredSales.length === 0 ? (
+                <TableRow>
+                  <TableCell colSpan={7} className="p-0">
+                    <CrmEmptyState
+                      className="min-h-0 border-0 py-10"
+                      icon={Receipt}
+                      title="Нет продаж"
+                      description="История чеков пуста. Возможно, в базе ещё нет продаж по выбранным фильтрам."
+                    />
+                  </TableCell>
+                </TableRow>
+              ) : null}
               {filteredSales.map((sale: any) => {
                 return (
                   <Dialog key={sale.id}>
@@ -265,7 +288,8 @@ function SalesContent() {
                           <div className="flex items-center gap-1">
                             {getPaymentIcon(sale.paymentMethod)}
                             <span className="text-xs">
-                              {PAYMENT_METHODS[sale.paymentMethod as keyof typeof PAYMENT_METHODS]}
+                              {PAYMENT_METHODS[sale.paymentMethod as keyof typeof PAYMENT_METHODS] ??
+                                sale.paymentMethod}
                             </span>
                           </div>
                         </TableCell>

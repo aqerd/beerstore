@@ -194,13 +194,13 @@ export function AppSidebar() {
             <SidebarMenuButton className="h-auto py-3">
               <Avatar className="h-8 w-8">
                 <AvatarFallback className="bg-primary/20 text-primary text-xs">
-                  {getInitials(currentUser.name)}
+                  {currentUser ? getInitials(currentUser.name) : 'U'}
                 </AvatarFallback>
               </Avatar>
               <div className="flex flex-col items-start">
-                <span className="text-sm font-medium">{currentUser.name}</span>
+                <span className="text-sm font-medium">{currentUser?.name || 'Пользователь'}</span>
                 <span className="text-xs text-muted-foreground">
-                  {USER_ROLES[currentUser.role]}
+                  {currentUser ? USER_ROLES[currentUser.role] : ''}
                 </span>
               </div>
             </SidebarMenuButton>

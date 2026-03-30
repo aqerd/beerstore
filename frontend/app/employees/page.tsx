@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-import { Plus, Search, Filter, MoreHorizontal, Pencil, Trash2, UserCog, Briefcase, Mail, Phone, Calendar, Store } from 'lucide-react'
+import { Plus, Search, MoreHorizontal, Pencil, Trash2, UserCog, Calendar, Store } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import {
@@ -39,6 +39,7 @@ import {
 import { Label } from '@/components/ui/label'
 import { CRMLayout } from '@/components/crm/crm-layout'
 import { employees, users, stores } from '@/lib/mock-data'
+import { CrmEmptyState } from '@/components/crm/crm-empty-state'
 
 function EmployeesContent() {
   const [searchQuery, setSearchQuery] = useState('')
@@ -187,6 +188,25 @@ function EmployeesContent() {
               </TableRow>
             </TableHeader>
             <TableBody>
+              {employees.length === 0 || users.length === 0 ? (
+                <TableRow>
+                  <TableCell colSpan={6} className="p-0">
+                    <CrmEmptyState
+                      className="min-h-0 border-0 py-10"
+                      icon={UserCog}
+                      title="Нет сотрудников"
+                      description="Список сотрудников пуст. Данные появятся после наполнения базы или кадрового модуля."
+                    />
+                  </TableCell>
+                </TableRow>
+              ) : null}
+              {employees.length > 0 && filteredEmployees.length === 0 ? (
+                <TableRow>
+                  <TableCell colSpan={6} className="h-24 text-center text-muted-foreground">
+                    Ничего не найдено по текущим фильтрам.
+                  </TableCell>
+                </TableRow>
+              ) : null}
               {filteredEmployees.map((employee) => {
                 const user = users.find(u => u.id === employee.userId)
                 if (!user) return null

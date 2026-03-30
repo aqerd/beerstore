@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-import { Plus, Search, Filter, MoreHorizontal, Pencil, Trash2, Users, Phone, Mail, Calendar, CreditCard } from 'lucide-react'
+import { Plus, Search, Filter, MoreHorizontal, Pencil, Trash2, Calendar, CreditCard, UserCircle } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import {
@@ -39,6 +39,7 @@ import {
 import { Label } from '@/components/ui/label'
 import { CRMLayout } from '@/components/crm/crm-layout'
 import { customers } from '@/lib/mock-data'
+import { CrmEmptyState } from '@/components/crm/crm-empty-state'
 
 function CustomersContent() {
   const [searchQuery, setSearchQuery] = useState('')
@@ -136,6 +137,25 @@ function CustomersContent() {
               </TableRow>
             </TableHeader>
             <TableBody>
+              {customers.length === 0 ? (
+                <TableRow>
+                  <TableCell colSpan={6} className="p-0">
+                    <CrmEmptyState
+                      className="min-h-0 border-0 py-10"
+                      icon={UserCircle}
+                      title="Нет клиентов"
+                      description="База клиентов пуста. Данные появятся после наполнения базы или программы лояльности."
+                    />
+                  </TableCell>
+                </TableRow>
+              ) : null}
+              {customers.length > 0 && filteredCustomers.length === 0 ? (
+                <TableRow>
+                  <TableCell colSpan={6} className="h-24 text-center text-muted-foreground">
+                    Ничего не найдено по текущему запросу.
+                  </TableCell>
+                </TableRow>
+              ) : null}
               {filteredCustomers.map((customer) => (
                 <TableRow key={customer.id}>
                   <TableCell>

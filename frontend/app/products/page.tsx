@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-import { Plus, Search, Filter, MoreHorizontal, Pencil, Trash2, Beer } from 'lucide-react'
+import { Plus, Search, Filter, MoreHorizontal, Pencil, Trash2, Beer, Package } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import {
@@ -38,13 +38,15 @@ import {
 } from '@/components/ui/dialog'
 import { Label } from '@/components/ui/label'
 import { CRMLayout } from '@/components/crm/crm-layout'
-import { products } from '@/lib/mock-data'
+import { CrmEmptyState } from '@/components/crm/crm-empty-state'
+import { useProducts } from '@/hooks/api/useProducts'
 import { BEER_CATEGORIES, type BeerCategory } from '@/lib/types'
 
 function ProductsContent() {
   const [searchQuery, setSearchQuery] = useState('')
   const [categoryFilter, setCategoryFilter] = useState<string>('all')
   const [isDialogOpen, setIsDialogOpen] = useState(false)
+  const { products, loading, error } = useProducts()
 
   const filteredProducts = products.filter((product) => {
     const matchesSearch =
@@ -52,10 +54,59 @@ function ProductsContent() {
       product.manufacturer.toLowerCase().includes(searchQuery.toLowerCase())
     const matchesCategory =
       categoryFilter === 'all' || product.category === categoryFilter
-    return matchesSearch && matchesCategory && product.isActive
+    return matchesSearch && matchesCategory && product.isActive !== false
   })
 
-  const getCategoryColor = (category: BeerCategory) => {
+  const activeCount = products.filter((p) => p.isActive !== false).length
+  const categoryCount = new Set(products.map((p) => p.category)).size
+  const avgPrice =
+    products.length > 0
+      ? Math.round(
+          products.reduce((sum, p) => sum + p.pricePerLiter, 0) / products.length,
+        )
+      : null
+
+  if (loading) {
+    return (
+      <div className="space-y-6 animate-pulse">
+        <div className="h-12 w-64 bg-muted rounded" />
+        <div className="grid gap-4 md:grid-cols-4">
+          {[1, 2, 3, 4].map((i) => (
+            <div key={i} className="h-24 bg-card rounded-xl border border-border" />
+          ))}
+        </div>
+        <div className="h-48 bg-card rounded-xl border border-border" />
+      </div>
+    )
+  }
+
+  if (error) {
+    return (
+      <CrmEmptyState
+        icon={Package}
+        description="Пока нет данных для каталога. Возможно, база данных пуста или сервер недоступен."
+      />
+    )
+  }
+
+  if (products.length === 0) {
+    return (
+      <div className="space-y-6">
+        <div>
+          <h1 className="text-2xl font-bold tracking-tight">Каталог товаров</h1>
+          <p className="text-muted-foreground">
+            Управление ассортиментом пива и напитков
+          </p>
+        </div>
+        <CrmEmptyState
+          icon={Package}
+          description="В каталоге пока нет товаров. Добавьте позиции или загрузите демо-данные в базу."
+        />
+      </div>
+    )
+  }
+
+  const getCategoryColor = (category: string) => {
     const colors: Record<BeerCategory, string> = {
       light: 'bg-yellow-500/10 text-yellow-500 border-yellow-500/20',
       dark: 'bg-amber-900/20 text-amber-400 border-amber-600/20',
@@ -66,7 +117,10 @@ function ProductsContent() {
       lager: 'bg-cyan-500/10 text-cyan-400 border-cyan-500/20',
       ale: 'bg-red-500/10 text-red-400 border-red-500/20',
     }
-    return colors[category]
+    return (
+      colors[category as BeerCategory] ??
+      'bg-muted text-muted-foreground border-border'
+    )
   }
 
   return (
@@ -163,9 +217,7 @@ function ProductsContent() {
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-success">
-              {products.filter((p) => p.isActive).length}
-            </div>
+            <div className="text-2xl font-bold text-success">{activeCount}</div>
           </CardContent>
         </Card>
         <Card className="bg-card border-border">
@@ -175,9 +227,7 @@ function ProductsContent() {
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">
-              {new Set(products.map((p) => p.category)).size}
-            </div>
+            <div className="text-2xl font-bold">{categoryCount}</div>
           </CardContent>
         </Card>
         <Card className="bg-card border-border">
@@ -188,11 +238,7 @@ function ProductsContent() {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">
-              {Math.round(
-                products.reduce((sum, p) => sum + p.pricePerLiter, 0) /
-                  products.length
-              )}{' '}
-              ₽/л
+              {avgPrice !== null ? `${avgPrice} ₽/л` : '—'}
             </div>
           </CardContent>
         </Card>
@@ -244,6 +290,13 @@ function ProductsContent() {
               </TableRow>
             </TableHeader>
             <TableBody>
+              {filteredProducts.length === 0 ? (
+                <TableRow>
+                  <TableCell colSpan={6} className="h-32 text-center text-muted-foreground">
+                    Ничего не найдено по текущим фильтрам.
+                  </TableCell>
+                </TableRow>
+              ) : null}
               {filteredProducts.map((product) => (
                 <TableRow key={product.id}>
                   <TableCell>
@@ -264,7 +317,8 @@ function ProductsContent() {
                       variant="outline"
                       className={getCategoryColor(product.category)}
                     >
-                      {BEER_CATEGORIES[product.category]}
+                      {BEER_CATEGORIES[product.category as BeerCategory] ??
+                        product.category}
                     </Badge>
                   </TableCell>
                   <TableCell className="text-muted-foreground">

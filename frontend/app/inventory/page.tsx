@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-import { Search, AlertTriangle, Package, TrendingDown, TrendingUp } from 'lucide-react'
+import { Search, AlertTriangle, Package, TrendingDown, TrendingUp, Boxes } from 'lucide-react'
 import { CRMLayout } from '@/components/crm/crm-layout'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -26,7 +26,8 @@ import { Progress } from '@/components/ui/progress'
 import { useCRM } from '@/lib/store'
 import { useInventory } from '@/hooks/api/useInventory'
 import { useStores } from '@/hooks/api/useStores'
-import { BEER_CATEGORIES } from '@/lib/types'
+import { BEER_CATEGORIES, type BeerCategory } from '@/lib/types'
+import { CrmEmptyState } from '@/components/crm/crm-empty-state'
 
 function InventoryContent() {
   const { currentStore } = useCRM()
@@ -34,7 +35,7 @@ function InventoryContent() {
   const [storeFilter, setStoreFilter] = useState<string>(currentStore?.id || 'all')
   const [statusFilter, setStatusFilter] = useState<string>('all')
 
-  const { inventory, lowStockItems, loading: inventoryLoading } = useInventory(
+  const { inventory, lowStockItems, loading: inventoryLoading, error: inventoryError } = useInventory(
     storeFilter === 'all' ? undefined : storeFilter
   )
   const { stores, loading: storesLoading } = useStores()
@@ -49,6 +50,15 @@ function InventoryContent() {
           ))}
         </div>
       </div>
+    )
+  }
+
+  if (inventoryError) {
+    return (
+      <CrmEmptyState
+        icon={Boxes}
+        description="Не удалось загрузить склад. Возможно, база данных пуста или сервер недоступен."
+      />
     )
   }
 
@@ -210,6 +220,25 @@ function InventoryContent() {
               </TableRow>
             </TableHeader>
             <TableBody>
+              {inventory.length === 0 ? (
+                <TableRow>
+                  <TableCell colSpan={6} className="border-0 p-0">
+                    <CrmEmptyState
+                      className="min-h-0 border-0 py-10"
+                      icon={Boxes}
+                      title="Нет данных по складу"
+                      description="Остатков пока нет. Возможно, база данных пуста или не настроены приходы."
+                    />
+                  </TableCell>
+                </TableRow>
+              ) : null}
+              {filteredInventory.length === 0 && inventory.length > 0 ? (
+                <TableRow>
+                  <TableCell colSpan={6} className="h-24 text-center text-muted-foreground">
+                    Ничего не найдено по текущим фильтрам.
+                  </TableCell>
+                </TableRow>
+              ) : null}
               {filteredInventory.map((inv) => {
                 const status = getStockStatus(inv.quantity, inv.minQuantity)
                 const fillPercentage = Math.min(
@@ -230,7 +259,8 @@ function InventoryContent() {
                       <Badge variant="outline">{getStoreName(inv.storeId)}</Badge>
                     </TableCell>
                     <TableCell className="text-muted-foreground">
-                      {BEER_CATEGORIES[inv.product.category]}
+                      {BEER_CATEGORIES[inv.product.category as BeerCategory] ??
+                        inv.product.category}
                     </TableCell>
                     <TableCell>
                       <span className={`font-medium ${status.color}`}>

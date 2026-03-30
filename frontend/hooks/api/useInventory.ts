@@ -13,9 +13,21 @@ export function useInventory(storeId?: string) {
   const [error, setError] = useState<Error | null>(null);
 
   const fetchInventory = async () => {
-    if (!storeId) return;
     try {
       setLoading(true);
+      setError(null);
+      if (!storeId) {
+        const storesList = await api.stores.list();
+        if (storesList.length === 0) {
+          setInventory([]);
+          return;
+        }
+        const chunks = await Promise.all(
+          storesList.map((s) => api.inventory.list(s.id)),
+        );
+        setInventory(chunks.flat());
+        return;
+      }
       const data = await api.inventory.list(storeId);
       setInventory(data);
     } catch (err) {

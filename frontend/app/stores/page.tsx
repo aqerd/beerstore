@@ -32,6 +32,7 @@ import {
 import { Label } from '@/components/ui/label'
 import { CRMLayout } from '@/components/crm/crm-layout'
 import { stores, users } from '@/lib/mock-data'
+import { CrmEmptyState } from '@/components/crm/crm-empty-state'
 
 function StoresContent() {
   const [searchQuery, setSearchQuery] = useState('')
@@ -104,6 +105,20 @@ function StoresContent() {
       </div>
 
       {}
+      {stores.length === 0 ? (
+        <CrmEmptyState
+          icon={Store}
+          title="Нет магазинов"
+          description="Торговые точки ещё не заведены. Данные появятся после наполнения базы или синхронизации с API."
+        />
+      ) : filteredStores.length === 0 ? (
+        <CrmEmptyState
+          className="min-h-[30vh]"
+          icon={Store}
+          title="Ничего не найдено"
+          description="Попробуйте изменить поисковый запрос."
+        />
+      ) : (
       <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
         {filteredStores.map((store) => (
           <Card key={store.id} className="bg-card border-border overflow-hidden">
@@ -161,6 +176,7 @@ function StoresContent() {
           </Card>
         ))}
       </div>
+      )}
     </div>
   )
 }
