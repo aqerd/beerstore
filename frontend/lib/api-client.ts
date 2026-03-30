@@ -4,7 +4,12 @@ import {
 } from './types';
 import * as mocks from './mock-data';
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080/api/v1';
+function normalizeApiBaseUrl(raw?: string) {
+  const base = (raw || 'http://localhost:8080').replace(/\/+$/, '')
+  return base.endsWith('/api/v1') ? base : `${base}/api/v1`
+}
+
+const API_BASE_URL = normalizeApiBaseUrl(process.env.NEXT_PUBLIC_API_URL);
 const USE_MOCKS = process.env.NEXT_PUBLIC_USE_MOCKS === 'true'; 
 
 async function request<T>(path: string, options?: RequestInit): Promise<T> {

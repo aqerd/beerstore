@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-import { Plus, Search, Phone, Mail, MapPin, Package, MoreHorizontal, Pencil, Trash2 } from 'lucide-react'
+import { Plus, Search, Phone, Mail, MapPin, Package, MoreHorizontal, Pencil, Trash2, Truck } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Badge } from '@/components/ui/badge'
@@ -24,6 +24,7 @@ import {
 import { Label } from '@/components/ui/label'
 import { suppliers, getProductById } from '@/lib/mock-data'
 import { CRMLayout } from '@/components/crm/crm-layout'
+import { CrmEmptyState } from '@/components/crm/crm-empty-state'
 
 function SuppliersContent() {
   const [searchQuery, setSearchQuery] = useState('')
@@ -149,6 +150,20 @@ function SuppliersContent() {
       </Card>
 
       {}
+      {suppliers.length === 0 ? (
+        <CrmEmptyState
+          icon={Truck}
+          title="Нет поставщиков"
+          description="В справочнике пока нет поставщиков. Данные появятся после наполнения базы или интеграции с API."
+        />
+      ) : filteredSuppliers.length === 0 ? (
+        <CrmEmptyState
+          className="min-h-[30vh]"
+          icon={Truck}
+          title="Ничего не найдено"
+          description="Попробуйте изменить поисковый запрос."
+        />
+      ) : (
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
         {filteredSuppliers.map((supplier) => (
           <Card key={supplier.id} className="bg-card border-border">
@@ -232,6 +247,7 @@ function SuppliersContent() {
           </Card>
         ))}
       </div>
+      )}
     </div>
   )
 }

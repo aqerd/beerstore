@@ -22,13 +22,13 @@ import {
 function DashboardContent() {
   const [mounted, setMounted] = useState(false)
   const { currentStore } = useCRM()
-  const { data: dashboardData, loading: dashboardLoading } = useDashboard(currentStore?.id)
+  const { data: dashboardData, loading: dashboardLoading, error } = useDashboard(currentStore?.id)
   
   useEffect(() => {
     setMounted(true)
   }, [])
 
-  if (!mounted || dashboardLoading || !dashboardData) {
+  if (!mounted || dashboardLoading) {
     return (
       <div className="flex flex-col gap-6 animate-pulse">
         <div className="h-8 w-48 bg-muted rounded" />
@@ -37,6 +37,20 @@ function DashboardContent() {
             <div key={i} className="h-32 bg-card border border-border rounded-xl" />
           ))}
         </div>
+      </div>
+    )
+  }
+
+  if (error || !dashboardData) {
+    return (
+      <div className="flex flex-col items-center justify-center h-[60vh] gap-4">
+        <div className="h-16 w-16 rounded-full bg-muted flex items-center justify-center">
+          <TrendingUp className="h-8 w-8 text-muted-foreground opacity-50" />
+        </div>
+        <h2 className="text-xl font-semibold">Нет данных</h2>
+        <p className="text-muted-foreground text-center max-w-md">
+          Пока нет данных для отображения дашборда. Возможно, база данных пуста или сервер недоступен.
+        </p>
       </div>
     )
   }
@@ -191,36 +205,9 @@ function DashboardContent() {
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
-            {['store-1', 'store-2', 'store-3'].map((storeId) => {
-              const storeStats = getTodayStats(storeId)
-              const storeName =
-                storeId === 'store-1'
-                  ? 'Центр'
-                  : storeId === 'store-2'
-                  ? 'Север'
-                  : 'Юг'
-              return (
-                <div
-                  key={storeId}
-                  className="flex items-center justify-between rounded-lg border border-border p-4"
-                >
-                  <div>
-                    <p className="font-medium">Жидкое Золото - {storeName}</p>
-                    <p className="text-sm text-muted-foreground">
-                      {storeStats.salesCount} продаж сегодня
-                    </p>
-                  </div>
-                  <div className="text-right">
-                    <p className="font-medium text-primary">
-                      {storeStats.revenue.toLocaleString('ru-RU')} ₽
-                    </p>
-                    <p className="text-xs text-muted-foreground">
-                      Ср. чек: {storeStats.averageCheck.toLocaleString('ru-RU')} ₽
-                    </p>
-                  </div>
-                </div>
-              )
-            })}
+            <div className="text-sm text-muted-foreground">
+              Данные по отдельным магазинам временно недоступны.
+            </div>
           </CardContent>
         </Card>
       </div>
