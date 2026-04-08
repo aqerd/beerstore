@@ -8,7 +8,7 @@ import {
   Truck,
   Users,
   UserCog,
-  Store,
+  Store as StoreIcon,
   Settings,
   LogOut,
   BarChart3,
@@ -80,7 +80,7 @@ const managementNavItems = [
   {
     title: 'Магазины',
     url: '/stores',
-    icon: Store,
+    icon: StoreIcon,
   },
 ]
 

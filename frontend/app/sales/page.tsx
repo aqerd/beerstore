@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useMemo } from 'react'
-import { Search, Calendar, Receipt, CreditCard, Banknote, ArrowUpDown, Plus, X, User, Phone, Package, Store } from 'lucide-react'
+import { Search, Calendar, Receipt, CreditCard, Banknote, ArrowUpDown, Plus, X, User, Phone, Package, Store as StoreIcon } from 'lucide-react'
 import { CRMLayout } from '@/components/crm/crm-layout'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -38,7 +38,7 @@ import { useSales } from '@/hooks/api/useSales'
 import { useDashboard } from '@/hooks/api/useDashboard'
 import { useStores } from '@/hooks/api/useStores'
 import { useProducts } from '@/hooks/api/useProducts'
-import { PAYMENT_METHODS, BEER_CATEGORIES, Store } from '@/lib/types'
+import { PAYMENT_METHODS, BEER_CATEGORIES, type Store } from '@/lib/types'
 import { CrmEmptyState } from '@/components/crm/crm-empty-state'
 import { api } from '@/lib/api-client'
 
@@ -150,7 +150,7 @@ function NewSaleDialog({ onSaleCreated, defaultStoreId, sellerId, stores }: { on
           {/* Store selection */}
           <div className="space-y-2">
             <Label htmlFor="store" className="flex items-center gap-2">
-              <Store className="h-4 w-4" />
+              <StoreIcon className="h-4 w-4" />
               Магазин
             </Label>
             <Select value={selectedStoreId} onValueChange={setSelectedStoreId}>

@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect, useMemo } from 'react'
-import { DollarSign, ShoppingCart, Users, TrendingUp, Store } from 'lucide-react'
+import { DollarSign, ShoppingCart, Users, TrendingUp, Store as StoreIcon } from 'lucide-react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { CRMLayout } from '@/components/crm/crm-layout'
 import { StatsCard } from '@/components/crm/stats-card'

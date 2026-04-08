@@ -1,7 +1,7 @@
 'use client'
 
 import { useMemo } from 'react'
-import { BarChart3, TrendingUp, Users, Package, Store, ShoppingCart, Beer } from 'lucide-react'
+import { BarChart3, TrendingUp, Users, Package, Store as StoreIcon, ShoppingCart, Beer } from 'lucide-react'
 import { CRMLayout } from '@/components/crm/crm-layout'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { useCRM } from '@/lib/store'
@@ -206,7 +206,7 @@ function AnalyticsContent() {
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
-              <Store className="h-5 w-5" />
+              <StoreIcon className="h-5 w-5" />
               Выручка по точкам
             </CardTitle>
           </CardHeader>

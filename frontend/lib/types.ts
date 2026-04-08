@@ -165,6 +165,14 @@ export interface WriteOff {
   managerId: string
 }
 
+export interface DailyStat {
+  date: string
+  revenue: number
+  salesCount: number
+  averageCheck: number
+  profit: number
+}
+
 
 export const BEER_CATEGORIES: Record<BeerCategory, string> = {
   light: 'Светлое',
