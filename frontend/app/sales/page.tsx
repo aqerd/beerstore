@@ -1,10 +1,11 @@
 'use client'
 
-import { useState } from 'react'
-import { Search, Calendar, Receipt, CreditCard, Banknote, ArrowUpDown } from 'lucide-react'
+import { useState, useMemo } from 'react'
+import { Search, Calendar, Receipt, CreditCard, Banknote, ArrowUpDown, Plus, X, User, Phone, Package, Store } from 'lucide-react'
 import { CRMLayout } from '@/components/crm/crm-layout'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
+import { Label } from '@/components/ui/label'
 import {
   Table,
   TableBody,
@@ -29,24 +30,299 @@ import {
   DialogHeader,
   DialogTitle,
   DialogTrigger,
+  DialogFooter,
+  DialogClose,
 } from '@/components/ui/dialog'
 import { useCRM } from '@/lib/store'
 import { useSales } from '@/hooks/api/useSales'
 import { useDashboard } from '@/hooks/api/useDashboard'
 import { useStores } from '@/hooks/api/useStores'
-import { PAYMENT_METHODS } from '@/lib/types'
+import { useProducts } from '@/hooks/api/useProducts'
+import { PAYMENT_METHODS, BEER_CATEGORIES, Store } from '@/lib/types'
 import { CrmEmptyState } from '@/components/crm/crm-empty-state'
+import { api } from '@/lib/api-client'
+
+interface SaleItem {
+  productId: string
+  quantity: number
+  pricePerLiter: number
+  total: number
+  productName?: string
+}
+
+function NewSaleDialog({ onSaleCreated, defaultStoreId, sellerId, stores }: { onSaleCreated: () => void, defaultStoreId: string, sellerId: string, stores: Store[] }) {
+  const [open, setOpen] = useState(false)
+  const [selectedStoreId, setSelectedStoreId] = useState(defaultStoreId)
+  const [customerName, setCustomerName] = useState('')
+  const [phone, setPhone] = useState('')
+  const [paymentMethod, setPaymentMethod] = useState('card')
+  const [items, setItems] = useState<SaleItem[]>([])
+  const [selectedProduct, setSelectedProduct] = useState('')
+  const [quantity, setQuantity] = useState('1')
+  const [loading, setLoading] = useState(false)
+
+  const { products } = useProducts()
+  const currentStore = stores.find(s => s.id === selectedStoreId)
+
+  const availableProducts = products.filter(p => p.isActive)
+
+  const totalAmount = items.reduce((sum, item) => sum + item.total, 0)
+
+  const addItem = () => {
+    if (!selectedProduct || !quantity || parseFloat(quantity) <= 0) return
+
+    const product = products.find(p => p.id === selectedProduct)
+    if (!product) return
+
+    const qty = parseFloat(quantity)
+    const item: SaleItem = {
+      productId: product.id,
+      productName: product.name,
+      quantity: qty,
+      pricePerLiter: product.pricePerLiter,
+      total: Math.round(qty * product.pricePerLiter * 100) / 100
+    }
+
+    setItems([...items, item])
+    setSelectedProduct('')
+    setQuantity('1')
+  }
+
+  const removeItem = (index: number) => {
+    setItems(items.filter((_, i) => i !== index))
+  }
+
+  const handleSubmit = async () => {
+    if (items.length === 0) return
+    if (!selectedStoreId || !sellerId) {
+      alert('Не выбран магазин или продавец')
+      return
+    }
+
+    setLoading(true)
+    try {
+      await api.sales.create({
+        storeId: selectedStoreId,
+        sellerId,
+        customerName: customerName || 'Гость',
+        phone: phone || undefined,
+        items: items.map(item => ({
+          productId: item.productId,
+          quantity: item.quantity,
+          pricePerLiter: item.pricePerLiter,
+          total: item.total
+        })),
+        paymentMethod
+      })
+      setOpen(false)
+      setCustomerName('')
+      setPhone('')
+      setItems([])
+      setPaymentMethod('card')
+      setSelectedStoreId(defaultStoreId)
+      onSaleCreated()
+    } catch (error) {
+      console.error('Failed to create sale:', error)
+      alert('Ошибка при создании чека')
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const getCategoryLabel = (category: string) => {
+    return BEER_CATEGORIES[category as keyof typeof BEER_CATEGORIES] || category
+  }
+
+  return (
+    <Dialog open={open} onOpenChange={setOpen}>
+      <DialogTrigger asChild>
+        <Button>
+          <Plus className="mr-2 h-4 w-4" />
+          Новая продажа
+        </Button>
+      </DialogTrigger>
+      <DialogContent className="max-w-2xl bg-card border-border max-h-[90vh] overflow-y-auto">
+        <DialogHeader>
+          <DialogTitle>Новая продажа</DialogTitle>
+        </DialogHeader>
+
+        <div className="space-y-6 py-4">
+          {/* Store selection */}
+          <div className="space-y-2">
+            <Label htmlFor="store" className="flex items-center gap-2">
+              <Store className="h-4 w-4" />
+              Магазин
+            </Label>
+            <Select value={selectedStoreId} onValueChange={setSelectedStoreId}>
+              <SelectTrigger id="store">
+                <SelectValue placeholder="Выберите магазин" />
+              </SelectTrigger>
+              <SelectContent>
+                {stores.map(store => (
+                  <SelectItem key={store.id} value={store.id}>
+                    {store.name.split(' - ')[1] || store.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
+          {/* Customer info */}
+          <div className="space-y-4">
+            <h4 className="text-sm font-medium flex items-center gap-2">
+              <User className="h-4 w-4" />
+              Клиент
+            </h4>
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="customerName">Имя</Label>
+                <Input
+                  id="customerName"
+                  placeholder="Гость"
+                  value={customerName}
+                  onChange={(e) => setCustomerName(e.target.value)}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="phone" className="flex items-center gap-2">
+                  <Phone className="h-3 w-3" />
+                  Телефон
+                </Label>
+                <Input
+                  id="phone"
+                  placeholder="+7 (XXX) XXX-XX-XX"
+                  value={phone}
+                  onChange={(e) => setPhone(e.target.value)}
+                />
+              </div>
+            </div>
+          </div>
+
+          {/* Items */}
+          <div className="space-y-4">
+            <h4 className="text-sm font-medium flex items-center gap-2">
+              <Package className="h-4 w-4" />
+              Товары
+            </h4>
+
+            <div className="flex gap-2">
+              <Select value={selectedProduct} onValueChange={setSelectedProduct}>
+                <SelectTrigger className="flex-1">
+                  <SelectValue placeholder="Выберите товар" />
+                </SelectTrigger>
+                <SelectContent>
+                  {availableProducts.map(product => (
+                    <SelectItem key={product.id} value={product.id}>
+                      <div className="flex items-center justify-between gap-4">
+                        <span>{product.name}</span>
+                        <span className="text-muted-foreground text-xs">
+                          {product.pricePerLiter} ₽/л
+                        </span>
+                      </div>
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <Input
+                type="number"
+                step="0.1"
+                min="0.1"
+                placeholder="Литров"
+                value={quantity}
+                onChange={(e) => setQuantity(e.target.value)}
+                className="w-28"
+              />
+              <Button type="button" onClick={addItem} disabled={!selectedProduct}>
+                <Plus className="h-4 w-4" />
+              </Button>
+            </div>
+
+            {items.length > 0 && (
+              <div className="border rounded-lg divide-y">
+                {items.map((item, idx) => {
+                  const product = products.find(p => p.id === item.productId)
+                  return (
+                    <div key={idx} className="flex items-center justify-between p-3">
+                      <div className="flex-1">
+                        <p className="font-medium text-sm">{product?.name}</p>
+                        <p className="text-xs text-muted-foreground">
+                          {item.quantity} л × {item.pricePerLiter} ₽/л
+                        </p>
+                      </div>
+                      <div className="flex items-center gap-3">
+                        <span className="font-medium">{item.total.toFixed(2)} ₽</span>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => removeItem(idx)}
+                          className="h-8 w-8 p-0"
+                        >
+                          <X className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    </div>
+                  )
+                })}
+              </div>
+            )}
+          </div>
+
+          {/* Payment */}
+          <div className="space-y-2">
+            <Label>Способ оплаты</Label>
+            <Select value={paymentMethod} onValueChange={setPaymentMethod}>
+              <SelectTrigger>
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="card">Карта</SelectItem>
+                <SelectItem value="cash">Наличные</SelectItem>
+                <SelectItem value="transfer">Перевод</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+
+          {/* Total */}
+          <div className="border-t pt-4">
+            <div className="flex justify-between items-center">
+              <span className="text-lg font-medium">Итого:</span>
+              <span className="text-2xl font-bold">{totalAmount.toFixed(2)} ₽</span>
+            </div>
+          </div>
+        </div>
+
+        <DialogFooter>
+          <DialogClose asChild>
+            <Button variant="outline">Отмена</Button>
+          </DialogClose>
+          <Button
+            onClick={handleSubmit}
+            disabled={items.length === 0 || loading || !storeId}
+          >
+            {loading ? 'Сохранение...' : 'Создать чек'}
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  )
+}
 
 function SalesContent() {
-  const { currentStore } = useCRM()
+  const { currentStore, currentUser } = useCRM()
   const [searchQuery, setSearchQuery] = useState('')
   const [storeFilter, setStoreFilter] = useState<string>(currentStore?.id || 'all')
   const [paymentFilter, setPaymentFilter] = useState<string>('all')
   const [selectedSale, setSelectedSale] = useState<any>(null)
+  const [refreshKey, setRefreshKey] = useState(0)
 
-  const { sales, loading: salesLoading, error: salesError } = useSales(storeFilter === 'all' ? undefined : storeFilter)
-  const { data: dashboardData, loading: dashboardLoading, error: dashboardError } = useDashboard(storeFilter === 'all' ? undefined : storeFilter)
+  const { sales, loading: salesLoading, error: salesError, refresh: refreshSales } = useSales(storeFilter === 'all' ? undefined : storeFilter)
+  const { data: dashboardData, loading: dashboardLoading, error: dashboardError, refresh: refreshDashboard } = useDashboard(storeFilter === 'all' ? undefined : storeFilter)
   const { stores, loading: storesLoading } = useStores()
+
+  const handleSaleCreated = () => {
+    refreshSales()
+    refreshDashboard()
+  }
 
   if (salesLoading || dashboardLoading || storesLoading) {
     return (
@@ -84,7 +360,7 @@ function SalesContent() {
         paymentFilter === 'all' || sale.paymentMethod === paymentFilter
       return matchesSearch && matchesStore && matchesPayment
     })
-    .slice(0, 50) 
+    .slice(0, 50)
 
   const getStoreName = (storeId: string) => {
     const store = stores.find((s) => s.id === storeId)
@@ -120,6 +396,9 @@ function SalesContent() {
     }
   }
 
+  const effectiveStoreId = currentStore?.id || stores[0]?.id || ''
+  const effectiveSellerId = currentUser?.id || 'user-1'
+
   return (
     <div className="space-y-6">
       {}
@@ -128,10 +407,12 @@ function SalesContent() {
           <h1 className="text-2xl font-bold tracking-tight">Продажи</h1>
           <p className="text-muted-foreground">История продаж и чеков</p>
         </div>
-        <Button>
-          <Receipt className="mr-2 h-4 w-4" />
-          Новая продажа
-        </Button>
+        <NewSaleDialog
+          onSaleCreated={handleSaleCreated}
+          defaultStoreId={effectiveStoreId}
+          sellerId={effectiveSellerId}
+          stores={stores}
+        />
       </div>
 
       {}
