@@ -7,6 +7,14 @@ export type ExtendedSale = Sale & {
   sellerName?: string;
 };
 
+function normalizeSale(sale: any): ExtendedSale {
+  return {
+    ...sale,
+    customerName: sale.customerName || 'Гость',
+    sellerName: sale.sellerName || 'Сотрудник',
+  };
+}
+
 export function useSales(storeId?: string) {
   const [sales, setSales] = useState<ExtendedSale[]>([]);
   const [loading, setLoading] = useState(true);
@@ -15,15 +23,9 @@ export function useSales(storeId?: string) {
   const fetchSales = async () => {
     try {
       setLoading(true);
+      setError(null);
       const data = await api.sales.list({ storeId });
-      
-      const extendedSales = data.map(sale => ({
-        ...sale,
-        customerName: 'Гость', 
-        sellerName: 'Сотрудник', 
-      }));
-
-      setSales(extendedSales);
+      setSales(data.map(normalizeSale));
     } catch (err) {
       setError(err as Error);
     } finally {
@@ -31,9 +33,17 @@ export function useSales(storeId?: string) {
     }
   };
 
+  const prependSale = (sale: any) => {
+    const normalized = normalizeSale(sale);
+    setSales((prev) => {
+      const withoutSame = prev.filter((item) => item.id !== normalized.id);
+      return [normalized, ...withoutSame];
+    });
+  };
+
   useEffect(() => {
     fetchSales();
   }, [storeId]);
 
-  return { sales, loading, error, refresh: fetchSales };
+  return { sales, loading, error, refresh: fetchSales, prependSale };
 }
