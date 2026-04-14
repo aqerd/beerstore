@@ -44,7 +44,7 @@ export function StoreSwitcher() {
           variant="outline"
           role="combobox"
           aria-expanded={open}
-          className="w-[200px] justify-between bg-secondary/50 border-0 hover:bg-zinc-700/50 transition-colors"
+          className="w-[200px] justify-between bg-secondary/50 border-0 hover:bg-zinc-700/50 hover:text-foreground transition-colors"
         >
           <div className="flex items-center gap-2">
             <StoreIcon className="h-4 w-4 text-primary" />

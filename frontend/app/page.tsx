@@ -1,7 +1,7 @@
 'use client'
 
-import { useState, useEffect } from 'react'
-import { DollarSign, ShoppingCart, Users, TrendingUp } from 'lucide-react'
+import { useState, useEffect, useMemo } from 'react'
+import { DollarSign, ShoppingCart, Users, TrendingUp, Store as StoreIcon } from 'lucide-react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { CRMLayout } from '@/components/crm/crm-layout'
 import { StatsCard } from '@/components/crm/stats-card'
@@ -9,6 +9,16 @@ import { RecentSales } from '@/components/crm/recent-sales'
 import { TopProducts } from '@/components/crm/top-products'
 import { useCRM } from '@/lib/store'
 import { useDashboard } from '@/hooks/api/useDashboard'
+import { useStores } from '@/hooks/api/useStores'
+import { useSales } from '@/hooks/api/useSales'
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@/components/ui/table'
 import {
   AreaChart,
   Area,

@@ -4,29 +4,55 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Progress } from '@/components/ui/progress'
 import { Badge } from '@/components/ui/badge'
 import { useCRM } from '@/lib/store'
-import { useTopProducts } from '@/hooks/api/useTopProducts'
 import { BEER_CATEGORIES } from '@/lib/types'
+import { sales, products } from '@/lib/mock-data'
 
 export function TopProducts() {
   const { currentStore } = useCRM()
-  const { topProducts, loading } = useTopProducts(7, currentStore?.id, 6)
-  
-  if (loading) {
+
+  // Calculate top products from sales data
+  const productStats = sales
+    .filter(sale => !currentStore || sale.storeId === currentStore.id)
+    .flatMap(sale => sale.items)
+    .reduce((acc, item) => {
+      if (!acc[item.productId]) {
+        acc[item.productId] = { quantity: 0, revenue: 0 }
+      }
+      acc[item.productId].quantity += item.quantity
+      acc[item.productId].revenue += item.total
+      return acc
+    }, {} as Record<string, { quantity: number; revenue: number }>)
+
+  const topProducts = Object.entries(productStats)
+    .map(([productId, stats]) => {
+      const product = products.find(p => p.id === productId)
+      if (!product) return null
+      return {
+        product,
+        quantity: stats.quantity,
+        revenue: stats.revenue,
+      }
+    })
+    .filter((item): item is NonNullable<typeof item> => item !== null)
+    .sort((a, b) => b.revenue - a.revenue)
+    .slice(0, 6)
+
+  const maxRevenue = topProducts[0]?.revenue || 1
+
+  if (topProducts.length === 0) {
     return (
-      <Card className="bg-card border-border animate-pulse">
+      <Card className="bg-card border-border">
         <CardHeader className="pb-3">
-          <div className="h-6 w-48 bg-muted rounded" />
+          <CardTitle className="text-lg font-semibold">
+            Топ товаров за неделю
+          </CardTitle>
         </CardHeader>
-        <CardContent className="space-y-4">
-          {[1, 2, 3].map(i => (
-            <div key={i} className="h-12 w-full bg-muted rounded" />
-          ))}
+        <CardContent>
+          <p className="text-sm text-muted-foreground">Нет данных о продажах</p>
         </CardContent>
       </Card>
     )
   }
-  
-  const maxRevenue = topProducts[0]?.revenue || 1
 
   return (
     <Card className="bg-card border-border">
