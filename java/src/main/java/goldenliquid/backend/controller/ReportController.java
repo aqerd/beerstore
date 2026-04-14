@@ -5,7 +5,9 @@ import org.springframework.web.bind.annotation.*;
 import goldenliquid.backend.model.Sale;
 import goldenliquid.backend.repository.SaleRepository;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.time.temporal.ChronoUnit;
 import java.util.Map;
 import java.util.HashMap;
@@ -77,7 +79,29 @@ public class ReportController {
         weekStats.put("averageCheck", weekSalesCount > 0 ? weekRevenue / weekSalesCount : 0);
         response.put("weekStats", weekStats);
 
+        DateTimeFormatter chartDateFormatter = DateTimeFormatter.ofPattern("dd.MM");
         List<Object> chartData = new ArrayList<>();
+        LocalDate startDate = weekAgo.toLocalDate();
+        LocalDate endDate = today.toLocalDate();
+        for (LocalDate date = startDate; !date.isAfter(endDate); date = date.plusDays(1)) {
+            LocalDateTime dayStart = date.atStartOfDay();
+            LocalDateTime nextDayStart = date.plusDays(1).atStartOfDay();
+
+            List<Sale> daySales = sales.stream()
+                .filter(s -> !s.getCreatedAt().isBefore(dayStart) && s.getCreatedAt().isBefore(nextDayStart))
+                .toList();
+
+            double dayRevenue = daySales.stream()
+                .mapToDouble(Sale::getTotal)
+                .sum();
+
+            Map<String, Object> dayPoint = new HashMap<>();
+            dayPoint.put("date", date.toString());
+            dayPoint.put("name", date.format(chartDateFormatter));
+            dayPoint.put("revenue", dayRevenue);
+            dayPoint.put("sales", daySales.size());
+            chartData.add(dayPoint);
+        }
         response.put("chartData", chartData);
 
         response.put("lowStockCount", 0);

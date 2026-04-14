@@ -85,20 +85,32 @@ async function mockRequest<T>(path: string, options?: RequestInit): Promise<T> {
     const weekStats = mocks.getWeekStats(storeId || undefined);
     const lowStockCount = mocks.getLowStockItems(storeId || undefined).length;
 
-    // Build chart data from sales (group by date)
-    const salesByDate = mocks.sales.reduce((acc, sale) => {
-      const date = new Date(sale.createdAt).toLocaleDateString('ru-RU', { weekday: 'short' });
-      if (!acc[date]) acc[date] = { revenue: 0, sales: 0 };
-      acc[date].revenue += sale.total;
-      acc[date].sales += 1;
-      return acc;
-    }, {} as Record<string, { revenue: number; sales: number }>);
-
-    const chartData = Object.entries(salesByDate).map(([name, data]) => ({
-      name,
-      revenue: data.revenue,
-      sales: data.sales,
-    }));
+    // Generate last 7 days including today
+    const chartData = [];
+    const today = new Date();
+    
+    for (let i = 6; i >= 0; i--) {
+      const d = new Date(today);
+      d.setDate(d.getDate() - i);
+      const dateStr = d.toISOString().split('T')[0];
+      const displayName = d.toLocaleDateString('ru-RU', { weekday: 'short' });
+      
+      // Calculate revenue and sales for this specific day
+      const daySales = mocks.sales.filter(sale => {
+        const saleDate = new Date(sale.createdAt).toISOString().split('T')[0];
+        const matchesStore = !storeId || sale.storeId === storeId;
+        return saleDate === dateStr && matchesStore;
+      });
+      
+      const revenue = daySales.reduce((sum, s) => sum + s.total, 0);
+      
+      chartData.push({
+        name: displayName,
+        date: dateStr,
+        revenue: Math.round(revenue),
+        sales: daySales.length
+      });
+    }
 
     return {
       todayStats: {

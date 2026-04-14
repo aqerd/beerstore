@@ -216,6 +216,14 @@ export const employees: Employee[] = [
   },
 ]
 
+// Helper to generate ISO date strings relative to now
+const relativeDate = (daysAgo: number, hoursOffset: number = 0) => {
+  const d = new Date()
+  d.setDate(d.getDate() - daysAgo)
+  d.setHours(d.getHours() - hoursOffset)
+  return d.toISOString()
+}
+
 export const sales: Sale[] = [
   {
     id: 'sale-1',
@@ -228,7 +236,7 @@ export const sales: Sale[] = [
     ],
     total: 465,
     paymentMethod: 'card',
-    createdAt: '2025-03-30T19:30:00Z',
+    createdAt: relativeDate(0, 1), // Today, 1 hour ago
     bonusUsed: 100,
     bonusEarned: 37,
   },
@@ -242,7 +250,7 @@ export const sales: Sale[] = [
     ],
     total: 320,
     paymentMethod: 'cash',
-    createdAt: '2025-03-30T20:15:00Z',
+    createdAt: relativeDate(0, 2), // Today, 2 hours ago
     bonusUsed: 0,
     bonusEarned: 32,
   },
@@ -257,7 +265,7 @@ export const sales: Sale[] = [
     ],
     total: 505,
     paymentMethod: 'card',
-    createdAt: '2025-03-30T21:00:00Z',
+    createdAt: relativeDate(1, 3), // Yesterday, 3 hours ago
     bonusUsed: 0,
     bonusEarned: 0,
   },
@@ -271,7 +279,7 @@ export const sales: Sale[] = [
     ],
     total: 360,
     paymentMethod: 'card',
-    createdAt: '2025-03-31T10:30:00Z',
+    createdAt: relativeDate(2, 5), // 2 days ago
     bonusUsed: 0,
     bonusEarned: 36,
   },
@@ -286,7 +294,49 @@ export const sales: Sale[] = [
     ],
     total: 540,
     paymentMethod: 'cash',
-    createdAt: '2025-03-31T12:00:00Z',
+    createdAt: relativeDate(3, 1), // 3 days ago
+    bonusUsed: 0,
+    bonusEarned: 0,
+  },
+  {
+    id: 'sale-6',
+    storeId: 'store-1',
+    sellerId: 'user-3',
+    customerId: 'cust-3',
+    items: [
+      { productId: 'prod-5', quantity: 1, pricePerLiter: 450, total: 450 },
+    ],
+    total: 450,
+    paymentMethod: 'card',
+    createdAt: relativeDate(4, 2), // 4 days ago
+    bonusUsed: 0,
+    bonusEarned: 45,
+  },
+  {
+    id: 'sale-7',
+    storeId: 'store-2',
+    sellerId: 'user-1',
+    customerId: 'cust-2',
+    items: [
+      { productId: 'prod-4', quantity: 2, pricePerLiter: 280, total: 560 },
+    ],
+    total: 560,
+    paymentMethod: 'card',
+    createdAt: relativeDate(5, 4), // 5 days ago
+    bonusUsed: 0,
+    bonusEarned: 56,
+  },
+  {
+    id: 'sale-8',
+    storeId: 'store-1',
+    sellerId: 'user-3',
+    customerId: undefined,
+    items: [
+      { productId: 'prod-1', quantity: 5, pricePerLiter: 120, total: 600 },
+    ],
+    total: 600,
+    paymentMethod: 'cash',
+    createdAt: relativeDate(6, 6), // 6 days ago
     bonusUsed: 0,
     bonusEarned: 0,
   },

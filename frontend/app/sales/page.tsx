@@ -69,19 +69,19 @@ function NewSaleDialog({ onSaleCreated, defaultStoreId, sellerId, stores }: { on
   const totalAmount = items.reduce((sum, item) => sum + item.total, 0)
 
   const addItem = () => {
-    if (!selectedProduct || !quantity || parseFloat(quantity) <= 0) return
+    const qty = parseFloat(quantity)
+    if (!selectedProduct || isNaN(qty) || qty <= 0) return
 
     const product = products.find(p => p.id === selectedProduct)
     if (!product) return
-
-    const qty = parseFloat(quantity)
-    const item: SaleItem = {
-      productId: product.id,
-      productName: product.name,
-      quantity: qty,
-      pricePerLiter: product.pricePerLiter,
-      total: Math.round(qty * product.pricePerLiter * 100) / 100
-    }
+  
+      const item: SaleItem = {
+        productId: product.id,
+        productName: product.name,
+        quantity: qty,
+        pricePerLiter: product.pricePerLiter,
+        total: Math.round(qty * product.pricePerLiter * 100) / 100
+      }
 
     setItems([...items, item])
     setSelectedProduct('')
@@ -297,7 +297,7 @@ function NewSaleDialog({ onSaleCreated, defaultStoreId, sellerId, stores }: { on
           </DialogClose>
           <Button
             onClick={handleSubmit}
-            disabled={items.length === 0 || loading || !storeId}
+            disabled={items.length === 0 || loading || !selectedStoreId}
           >
             {loading ? 'Сохранение...' : 'Создать чек'}
           </Button>

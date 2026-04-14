@@ -114,7 +114,7 @@ export interface SupplyOrderItem {
 export interface Employee {
   id: string
   userId: string
-  storeId: string
+  storeId: string | null
   position: string
   salary: number
   hiredAt: string
