@@ -17,7 +17,9 @@ async function request<T>(path: string, options?: RequestInit): Promise<T> {
     return mockRequest<T>(path, options);
   }
 
+  const method = (options?.method || 'GET').toUpperCase();
   const response = await fetch(`${API_BASE_URL}${path}`, {
+    cache: method === 'GET' ? 'no-store' : undefined,
     ...options,
     headers: {
       'Content-Type': 'application/json',
@@ -26,7 +28,12 @@ async function request<T>(path: string, options?: RequestInit): Promise<T> {
   });
 
   if (!response.ok) {
-    throw new Error(`API Error: ${response.statusText}`);
+    let detail = response.statusText;
+    try {
+      const payload = await response.json();
+      detail = payload?.detail || payload?.message || detail;
+    } catch {}
+    throw new Error(`API Error: ${detail}`);
   }
 
   return response.json();
@@ -242,8 +249,12 @@ export const api = {
       request<any>(`/reports/dashboard${storeId ? `?storeId=${storeId}` : ''}`),
     getDailyStats: (storeId?: string) => 
       request<DailyStat[]>(`/reports/daily-stats${storeId ? `?storeId=${storeId}` : ''}`),
-    getFinancials: (params: { startDate: string; endDate: string }) => 
-      request<any>(`/reports/financials?startDate=${params.startDate}&endDate=${params.endDate}`),
+    getFinancials: (params: { startDate: string; endDate: string; storeId?: string }) => 
+      request<any>(`/reports/financials?startDate=${params.startDate}&endDate=${params.endDate}${params.storeId ? `&storeId=${params.storeId}` : ''}`),
+    getManagement: (params: { startDate?: string; endDate?: string; storeId?: string }) => {
+      const query = new URLSearchParams(params as any).toString();
+      return request<any>(`/reports/management?${query}`);
+    },
     getStaffPerformance: (storeId?: string) => 
       request<any>(`/reports/staff-performance${storeId ? `?storeId=${storeId}` : ''}`),
     getBeerStats: (params: { storeId?: string; productId?: string; startDate?: string; endDate?: string }) => {
