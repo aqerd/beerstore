@@ -11,7 +11,6 @@ import {
   Store as StoreIcon,
   Settings,
   LogOut,
-  BarChart3,
 } from 'lucide-react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
@@ -53,11 +52,6 @@ const mainNavItems = [
     title: 'Продажи',
     url: '/sales',
     icon: ShoppingCart,
-  },
-  {
-    title: 'Аналитика',
-    url: '/analytics',
-    icon: BarChart3,
   },
 ]
 
