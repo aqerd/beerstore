@@ -8,8 +8,7 @@ import {
   Truck,
   Users,
   UserCog,
-  Store,
-  BarChart3,
+  Store as StoreIcon,
   Settings,
   LogOut,
 } from 'lucide-react'
@@ -75,16 +74,11 @@ const managementNavItems = [
   {
     title: 'Магазины',
     url: '/stores',
-    icon: Store,
+    icon: StoreIcon,
   },
 ]
 
-const analyticsNavItems = [
-  {
-    title: 'Аналитика',
-    url: '/analytics',
-    icon: BarChart3,
-  },
+const systemNavItems = [
   {
     title: 'Настройки',
     url: '/settings',
@@ -169,7 +163,7 @@ export function AppSidebar() {
           <SidebarGroupLabel>Система</SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
-              {analyticsNavItems.map((item) => (
+              {systemNavItems.map((item) => (
                 <SidebarMenuItem key={item.title}>
                   <SidebarMenuButton
                     asChild

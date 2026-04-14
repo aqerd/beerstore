@@ -114,22 +114,13 @@ export interface SupplyOrderItem {
 export interface Employee {
   id: string
   userId: string
-  storeId: string
+  storeId: string | null
   position: string
   salary: number
   hiredAt: string
   isActive: boolean
 }
 
-export interface DailyStat {
-  date: string
-  storeId: string
-  revenue: number
-  salesCount: number
-  averageCheck: number
-  newCustomers: number
-  topProducts: { productId: string; quantity: number }[]
-}
 
 
 export interface Shift {
@@ -172,6 +163,14 @@ export interface WriteOff {
   reason: 'sour' | 'foam' | 'cleaning' | 'other'
   createdAt: string
   managerId: string
+}
+
+export interface DailyStat {
+  date: string
+  revenue: number
+  salesCount: number
+  averageCheck: number
+  profit: number
 }
 
 

@@ -1,7 +1,7 @@
 'use client'
 
-import { useState, useEffect } from 'react'
-import { DollarSign, ShoppingCart, Users, TrendingUp } from 'lucide-react'
+import { useState, useEffect, useMemo } from 'react'
+import { DollarSign, ShoppingCart, Users, TrendingUp, Store as StoreIcon, Beer, Package } from 'lucide-react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { CRMLayout } from '@/components/crm/crm-layout'
 import { StatsCard } from '@/components/crm/stats-card'
@@ -9,6 +9,11 @@ import { RecentSales } from '@/components/crm/recent-sales'
 import { TopProducts } from '@/components/crm/top-products'
 import { useCRM } from '@/lib/store'
 import { useDashboard } from '@/hooks/api/useDashboard'
+import { useStores } from '@/hooks/api/useStores'
+import { useSales } from '@/hooks/api/useSales'
+import { useProducts } from '@/hooks/api/useProducts'
+import { BEER_CATEGORIES, PAYMENT_METHODS } from '@/lib/types'
+import { Progress } from '@/components/ui/progress'
 import {
   AreaChart,
   Area,
@@ -23,6 +28,99 @@ function DashboardContent() {
   const [mounted, setMounted] = useState(false)
   const { currentStore } = useCRM()
   const { data: dashboardData, loading: dashboardLoading, error } = useDashboard(currentStore?.id)
+  const { sales, loading: salesLoading } = useSales(currentStore?.id)
+  const { stores, loading: storesLoading } = useStores()
+  const { products, loading: productsLoading } = useProducts()
+
+  const analyticsStats = useMemo(() => {
+    if (!sales.length || !stores.length || !products.length) return null
+
+    const totalRevenue = sales.reduce((sum, s) => sum + s.total, 0)
+    const totalSales = sales.length
+    const avgCheck = totalSales > 0 ? Math.round(totalRevenue / totalSales) : 0
+
+    const uniqueCustomers = new Set(sales.filter(s => s.customerId).map(s => s.customerId)).size
+    const guestSales = sales.filter(s => !s.customerId).length
+
+    const paymentStats = sales.reduce((acc, s) => {
+      acc[s.paymentMethod] = (acc[s.paymentMethod] || 0) + s.total
+      return acc
+    }, {} as Record<string, number>)
+
+    const storeStats = stores
+      .map(store => {
+        const storeSales = sales.filter(s => s.storeId === store.id)
+        const storeRevenue = storeSales.reduce((sum, s) => sum + s.total, 0)
+        return {
+          name: store.name.split(' - ')[1] || store.name,
+          revenue: storeRevenue,
+          salesCount: storeSales.length,
+        }
+      })
+      .sort((a, b) => b.revenue - a.revenue)
+
+    const productSales = new Map<string, { quantity: number; revenue: number }>()
+    sales.forEach(sale => {
+      sale.items.forEach(item => {
+        const current = productSales.get(item.productId) || { quantity: 0, revenue: 0 }
+        current.quantity += item.quantity
+        current.revenue += item.total
+        productSales.set(item.productId, current)
+      })
+    })
+
+    const topProducts = Array.from(productSales.entries())
+      .map(([productId, data]) => {
+        const product = products.find(p => p.id === productId)
+        return {
+          name: product?.name || 'Unknown',
+          category: product?.category || 'other',
+          ...data,
+        }
+      })
+      .sort((a, b) => b.revenue - a.revenue)
+      .slice(0, 5)
+
+    const categoryStats = Object.entries(BEER_CATEGORIES)
+      .map(([key, label]) => {
+        const categoryProducts = products.filter(p => p.category === key)
+        const categoryRevenue = topProducts
+          .filter(p => p.category === key)
+          .reduce((sum, p) => sum + p.revenue, 0)
+        return {
+          key,
+          label,
+          count: categoryProducts.length,
+          revenue: categoryRevenue,
+        }
+      })
+      .filter(c => c.count > 0)
+
+    const today = new Date().toDateString()
+    const todaySales = sales.filter(s => new Date(s.createdAt).toDateString() === today)
+    const todayRevenue = todaySales.reduce((sum, s) => sum + s.total, 0)
+
+    const weekAgo = new Date()
+    weekAgo.setDate(weekAgo.getDate() - 7)
+    const weekSales = sales.filter(s => new Date(s.createdAt) >= weekAgo)
+    const weekRevenue = weekSales.reduce((sum, s) => sum + s.total, 0)
+
+    return {
+      totalRevenue,
+      totalSales,
+      avgCheck,
+      uniqueCustomers,
+      guestSales,
+      paymentStats,
+      storeStats,
+      topProducts,
+      categoryStats,
+      todayRevenue,
+      todaySalesCount: todaySales.length,
+      weekRevenue,
+      weekSalesCount: weekSales.length,
+    }
+  }, [sales, stores, products])
   
   useEffect(() => {
     setMounted(true)
@@ -211,6 +309,189 @@ function DashboardContent() {
           </CardContent>
         </Card>
       </div>
+
+      {analyticsStats && !salesLoading && !storesLoading && !productsLoading && (
+        <>
+          <div>
+            <h2 className="text-2xl font-bold tracking-tight">Аналитика</h2>
+            <p className="text-muted-foreground">Статистика и анализ данных по продажам</p>
+          </div>
+
+          <div className="grid gap-4 md:grid-cols-4">
+            <Card>
+              <CardHeader className="pb-2">
+                <CardTitle className="text-sm font-medium text-muted-foreground flex items-center gap-2">
+                  <TrendingUp className="h-4 w-4" />
+                  Общая выручка
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold">{analyticsStats.totalRevenue.toLocaleString('ru-RU')} ₽</div>
+                <p className="text-xs text-muted-foreground">
+                  Сегодня: {analyticsStats.todayRevenue.toLocaleString('ru-RU')} ₽
+                </p>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader className="pb-2">
+                <CardTitle className="text-sm font-medium text-muted-foreground flex items-center gap-2">
+                  <ShoppingCart className="h-4 w-4" />
+                  Всего продаж
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold">{analyticsStats.totalSales}</div>
+                <p className="text-xs text-muted-foreground">
+                  Сегодня: {analyticsStats.todaySalesCount}, За неделю: {analyticsStats.weekSalesCount}
+                </p>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader className="pb-2">
+                <CardTitle className="text-sm font-medium text-muted-foreground flex items-center gap-2">
+                  <Users className="h-4 w-4" />
+                  Клиенты
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold">{analyticsStats.uniqueCustomers}</div>
+                <p className="text-xs text-muted-foreground">
+                  Гостей без регистрации: {analyticsStats.guestSales}
+                </p>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader className="pb-2">
+                <CardTitle className="text-sm font-medium text-muted-foreground flex items-center gap-2">
+                  <Package className="h-4 w-4" />
+                  Средний чек
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold">{analyticsStats.avgCheck.toLocaleString('ru-RU')} ₽</div>
+                <p className="text-xs text-muted-foreground">
+                  За неделю: {analyticsStats.weekRevenue.toLocaleString('ru-RU')} ₽
+                </p>
+              </CardContent>
+            </Card>
+          </div>
+
+          <div className="grid gap-4 md:grid-cols-2">
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <StoreIcon className="h-5 w-5" />
+                  Выручка по точкам
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-4">
+                  {analyticsStats.storeStats.map((store) => {
+                    const maxRevenue = analyticsStats.storeStats[0]?.revenue || 1
+                    const percent = maxRevenue > 0 ? (store.revenue / maxRevenue) * 100 : 0
+                    return (
+                      <div key={store.name} className="space-y-2">
+                        <div className="flex justify-between text-sm">
+                          <span className="font-medium">{store.name}</span>
+                          <span className="text-muted-foreground">
+                            {store.revenue.toLocaleString('ru-RU')} ₽ ({store.salesCount} продаж)
+                          </span>
+                        </div>
+                        <Progress value={percent} className="h-2" />
+                      </div>
+                    )
+                  })}
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Beer className="h-5 w-5" />
+                  Топ товаров
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-3">
+                  {analyticsStats.topProducts.map((product, idx) => (
+                    <div key={product.name} className="flex items-center justify-between">
+                      <div className="flex items-center gap-3">
+                        <span className="flex h-6 w-6 items-center justify-center rounded-full bg-primary/10 text-xs font-medium text-primary">
+                          {idx + 1}
+                        </span>
+                        <div>
+                          <p className="text-sm font-medium">{product.name}</p>
+                          <p className="text-xs text-muted-foreground">
+                            {BEER_CATEGORIES[product.category as keyof typeof BEER_CATEGORIES] || product.category}
+                          </p>
+                        </div>
+                      </div>
+                      <div className="text-right">
+                        <p className="text-sm font-medium">{product.revenue.toLocaleString('ru-RU')} ₽</p>
+                        <p className="text-xs text-muted-foreground">{product.quantity.toFixed(1)} л</p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+
+          <div className="grid gap-4 md:grid-cols-2">
+            <Card>
+              <CardHeader>
+                <CardTitle>Категории товаров</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-3">
+                  {analyticsStats.categoryStats.map((cat) => {
+                    const maxCount = Math.max(...analyticsStats.categoryStats.map(c => c.count))
+                    const percent = maxCount > 0 ? (cat.count / maxCount) * 100 : 0
+                    return (
+                      <div key={cat.key} className="space-y-1">
+                        <div className="flex justify-between text-sm">
+                          <span>{cat.label}</span>
+                          <span className="text-muted-foreground">{cat.count} товаров</span>
+                        </div>
+                        <Progress value={percent} className="h-2" />
+                      </div>
+                    )
+                  })}
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader>
+                <CardTitle>Способы оплаты</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-3">
+                  {Object.entries(analyticsStats.paymentStats)
+                    .sort(([, a], [, b]) => b - a)
+                    .map(([method, amount]) => {
+                      const total = Object.values(analyticsStats.paymentStats).reduce((a, b) => a + b, 0)
+                      const percent = total > 0 ? (amount / total) * 100 : 0
+                      return (
+                        <div key={method} className="space-y-1">
+                          <div className="flex justify-between text-sm">
+                            <span>{PAYMENT_METHODS[method as keyof typeof PAYMENT_METHODS] || method}</span>
+                            <span className="text-muted-foreground">{amount.toLocaleString('ru-RU')} ₽</span>
+                          </div>
+                          <Progress value={percent} className="h-2" />
+                        </div>
+                      )
+                    })}
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+        </>
+      )}
     </div>
   )
 }
