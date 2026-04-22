@@ -1,6 +1,6 @@
 'use client'
 
-import { Bell, Search } from 'lucide-react'
+import { Bell, Search, LogOut } from 'lucide-react'
 import { SidebarTrigger } from '@/components/ui/sidebar'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
@@ -17,10 +17,12 @@ import { StoreSwitcher } from './store-switcher'
 import { useCRM } from '@/lib/store'
 import { useInventory } from '@/hooks/api/useInventory'
 import { useState, useEffect } from 'react'
+import { useRouter } from 'next/navigation'
 
 export function Header() {
   const [mounted, setMounted] = useState(false)
-  const { currentStore } = useCRM()
+  const { currentStore, setCurrentUser } = useCRM()
+  const router = useRouter()
   const { lowStockItems, loading } = useInventory(currentStore?.id)
   const alertCount = lowStockItems.length
 
@@ -82,8 +84,8 @@ export function Header() {
                     </span>
                   </div>
                   <p className="text-xs text-muted-foreground pl-4">
-                    {item.product.name} - {item.quantity}л осталось в{' '}
-                    {item.store.name.split(' - ')[1]}
+                    {item.product?.name || 'Товар'} - {item.quantity}л осталось в{' '}
+                    {item.store?.name?.includes(' - ') ? item.store.name.split(' - ')[1] : (item.store?.name || 'магазине')}
                   </p>
                 </DropdownMenuItem>
               ))}
@@ -98,6 +100,27 @@ export function Header() {
               Нет новых уведомлений
             </div>
           )}
+        </DropdownMenuContent>
+      </DropdownMenu>
+
+      <DropdownMenu>
+        <DropdownMenuTrigger asChild>
+          <Button variant="ghost" size="sm" className="gap-2">
+            <span className="text-sm font-medium hidden md:inline-block">Выйти</span>
+            <LogOut className="h-4 w-4" />
+          </Button>
+        </DropdownMenuTrigger>
+        <DropdownMenuContent align="end">
+          <DropdownMenuItem
+            onClick={() => {
+              sessionStorage.removeItem('user')
+              setCurrentUser(null)
+              router.push('/login')
+            }}
+            className="text-destructive focus:text-destructive"
+          >
+            Выйти из системы
+          </DropdownMenuItem>
         </DropdownMenuContent>
       </DropdownMenu>
     </header>

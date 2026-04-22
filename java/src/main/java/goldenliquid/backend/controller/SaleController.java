@@ -7,9 +7,12 @@ import goldenliquid.backend.model.Sale;
 import goldenliquid.backend.model.Customer;
 import goldenliquid.backend.repository.SaleRepository;
 import goldenliquid.backend.repository.CustomerRepository;
+import goldenliquid.backend.repository.InventoryRepository;
+import goldenliquid.backend.model.Inventory;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 
 @RestController
@@ -20,6 +23,7 @@ public class SaleController {
 
     private final SaleRepository saleRepository;
     private final CustomerRepository customerRepository;
+    private final InventoryRepository inventoryRepository;
 
     @GetMapping
     public List<Sale> getSales(@RequestParam(required = false) String storeId) {
@@ -37,6 +41,26 @@ public class SaleController {
 
     @PostMapping
     public Sale createSale(@RequestBody CreateSaleRequest request) {
+        // Update Inventory first
+        for (Sale.SaleItem item : request.getItems()) {
+            List<Inventory> inventoryList = inventoryRepository.findByStoreId(request.getStoreId());
+            Optional<Inventory> inventoryOpt = inventoryList.stream()
+                    .filter(inv -> inv.getProductId().equals(item.getProductId()))
+                    .findFirst();
+
+            if (inventoryOpt.isPresent()) {
+                Inventory inventory = inventoryOpt.get();
+                if (inventory.getQuantity() < item.getQuantity()) {
+                    throw new IllegalArgumentException("Insufficient quantity for product: " + item.getProductId());
+                }
+                inventory.setQuantity(inventory.getQuantity() - item.getQuantity());
+                inventory.setLastUpdated(LocalDateTime.now());
+                inventoryRepository.save(inventory);
+            } else {
+                throw new IllegalArgumentException("Inventory not found for product: " + item.getProductId() + " in store: " + request.getStoreId());
+            }
+        }
+
         String customerId = null;
         String customerName = "Гость";
 

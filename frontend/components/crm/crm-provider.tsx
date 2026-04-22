@@ -4,12 +4,18 @@ import { useState, useEffect, type ReactNode } from 'react'
 import { CRMContext } from '@/lib/store'
 import type { User, Store } from '@/lib/types'
 import { api } from '@/lib/api-client'
+import { usePathname } from 'next/navigation'
+import { useRouter } from 'next/navigation'
 
 interface CRMProviderProps {
   children: ReactNode
 }
 
+const PUBLIC_PATHS = ['/login']
+
 export function CRMProvider({ children }: CRMProviderProps) {
+  const pathname = usePathname()
+  const router = useRouter()
   const [currentUser, setCurrentUser] = useState<User | null>(null)
   const [currentStore, setCurrentStore] = useState<Store | null>(null)
   const [loading, setLoading] = useState(true)
@@ -17,14 +23,23 @@ export function CRMProvider({ children }: CRMProviderProps) {
   useEffect(() => {
     async function initSession() {
       try {
+        const storedUser = sessionStorage.getItem('user')
+        if (storedUser) {
+          try {
+            const user = JSON.parse(storedUser)
+            setCurrentUser(user)
+          } catch {
+            sessionStorage.removeItem('user')
+          }
+        }
+
         const stores = await api.stores.list()
         if (stores.length > 0) {
           setCurrentStore(stores[0])
         }
-        
-        const users = await api.auth.login({ username: 'test', password: 'test' })
-        if (users && users.user) {
-          setCurrentUser(users.user)
+
+        if (!storedUser && !PUBLIC_PATHS.includes(pathname || '')) {
+          router.push('/login')
         }
       } catch (error) {
         console.error('Session initialization failed:', error)
@@ -33,7 +48,13 @@ export function CRMProvider({ children }: CRMProviderProps) {
       }
     }
     initSession()
-  }, [])
+  }, [pathname, router])
+
+  useEffect(() => {
+    if (!loading && !currentUser && !PUBLIC_PATHS.includes(pathname || '')) {
+      router.push('/login')
+    }
+  }, [loading, currentUser, pathname, router])
 
   if (loading) {
     return (
