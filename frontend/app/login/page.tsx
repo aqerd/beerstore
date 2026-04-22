@@ -82,11 +82,11 @@ export default function LoginPage() {
               {loading ? 'Вход...' : 'Войти'}
             </Button>
           </form>
-          <div className="mt-4 p-3 text-xs text-muted-foreground bg-muted/50 rounded-md">
+          {/* <div className="mt-4 p-3 text-xs text-muted-foreground bg-muted/50 rounded-md">
             <p className="font-medium mb-1">Тестовые учётные данные:</p>
             <p>admin@goldenliquid.ru / password</p>
             <p>manager1@goldenliquid.ru / password</p>
-          </div>
+          </div> */}
         </CardContent>
       </Card>
     </div>

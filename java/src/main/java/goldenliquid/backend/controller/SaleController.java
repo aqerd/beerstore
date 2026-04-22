@@ -41,24 +41,31 @@ public class SaleController {
 
     @PostMapping
     public Sale createSale(@RequestBody CreateSaleRequest request) {
-        // Update Inventory first
+        // 1. Validate all items and inventory availability first
         for (Sale.SaleItem item : request.getItems()) {
             List<Inventory> inventoryList = inventoryRepository.findByStoreId(request.getStoreId());
-            Optional<Inventory> inventoryOpt = inventoryList.stream()
+            Inventory inventory = inventoryList.stream()
                     .filter(inv -> inv.getProductId().equals(item.getProductId()))
-                    .findFirst();
+                    .findFirst()
+                    .orElseThrow(() -> new IllegalArgumentException("Товар не найден на складе этого магазина: " + item.getProductId()));
 
-            if (inventoryOpt.isPresent()) {
-                Inventory inventory = inventoryOpt.get();
-                if (inventory.getQuantity() < item.getQuantity()) {
-                    throw new IllegalArgumentException("Insufficient quantity for product: " + item.getProductId());
-                }
-                inventory.setQuantity(inventory.getQuantity() - item.getQuantity());
-                inventory.setLastUpdated(LocalDateTime.now());
-                inventoryRepository.save(inventory);
-            } else {
-                throw new IllegalArgumentException("Inventory not found for product: " + item.getProductId() + " in store: " + request.getStoreId());
+            if (inventory.getQuantity() < item.getQuantity()) {
+                throw new IllegalArgumentException("Недостаточное количество товара " + item.getProductId() + 
+                    ": в наличии " + inventory.getQuantity() + " л, требуется " + item.getQuantity() + " л");
             }
+        }
+
+        // 2. Perform updates
+        for (Sale.SaleItem item : request.getItems()) {
+            List<Inventory> inventoryList = inventoryRepository.findByStoreId(request.getStoreId());
+            Inventory inventory = inventoryList.stream()
+                    .filter(inv -> inv.getProductId().equals(item.getProductId()))
+                    .findFirst()
+                    .get(); // We already validated existence above
+
+            inventory.setQuantity(inventory.getQuantity() - item.getQuantity());
+            inventory.setLastUpdated(LocalDateTime.now());
+            inventoryRepository.save(inventory);
         }
 
         String customerId = null;
