@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-import { Search, AlertTriangle, Package, TrendingDown, TrendingUp, Boxes } from 'lucide-react'
+import { Search, AlertTriangle, Package, TrendingDown, TrendingUp, Boxes, Plus } from 'lucide-react'
 import { CRMLayout } from '@/components/crm/crm-layout'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -28,14 +28,15 @@ import { useInventory } from '@/hooks/api/useInventory'
 import { useStores } from '@/hooks/api/useStores'
 import { BEER_CATEGORIES, type BeerCategory } from '@/lib/types'
 import { CrmEmptyState } from '@/components/crm/crm-empty-state'
+import { NewSaleDialog } from '@/components/crm/new-sale-dialog'
 
 function InventoryContent() {
-  const { currentStore } = useCRM()
+  const { currentStore, currentUser } = useCRM()
   const [searchQuery, setSearchQuery] = useState('')
   const [storeFilter, setStoreFilter] = useState<string>(currentStore?.id || 'all')
   const [statusFilter, setStatusFilter] = useState<string>('all')
 
-  const { inventory, lowStockItems, loading: inventoryLoading, error: inventoryError } = useInventory(
+  const { inventory, lowStockItems, loading: inventoryLoading, error: inventoryError, refresh } = useInventory(
     storeFilter === 'all' ? undefined : storeFilter
   )
   const { stores, loading: storesLoading } = useStores()
@@ -64,7 +65,8 @@ function InventoryContent() {
 
   const filteredInventory = inventory
     .filter((inv) => {
-      const matchesSearch = inv.product.name
+      const productName = inv.product?.name || 'Неизвестный товар'
+      const matchesSearch = productName
         .toLowerCase()
         .includes(searchQuery.toLowerCase())
       const isLowStock = inv.quantity <= inv.minQuantity
@@ -110,10 +112,18 @@ function InventoryContent() {
             <TrendingDown className="mr-2 h-4 w-4" />
             Списание
           </Button>
-          <Button>
-            <TrendingUp className="mr-2 h-4 w-4" />
-            Приход товара
-          </Button>
+          <NewSaleDialog 
+            onSaleCreated={refresh}
+            defaultStoreId={currentStore?.id || stores[0]?.id || ''}
+            sellerId={currentUser?.id || ''}
+            stores={stores}
+            trigger={
+              <Button>
+                <Plus className="mr-2 h-4 w-4" />
+                Создать заказ
+              </Button>
+            }
+          />
         </div>
       </div>
 
@@ -186,7 +196,7 @@ function InventoryContent() {
                 <SelectItem value="all">Все магазины</SelectItem>
                 {stores.map((store) => (
                   <SelectItem key={store.id} value={store.id}>
-                    {store.name.split(' - ')[1]}
+                    {store.name.includes(' - ') ? store.name.split(' - ')[1] : store.name}
                   </SelectItem>
                 ))}
               </SelectContent>
@@ -241,17 +251,18 @@ function InventoryContent() {
               ) : null}
               {filteredInventory.map((inv) => {
                 const status = getStockStatus(inv.quantity, inv.minQuantity)
+                const minQty = inv.minQuantity || 1 // Avoid division by zero
                 const fillPercentage = Math.min(
-                  (inv.quantity / (inv.minQuantity * 3)) * 100,
+                  (inv.quantity / (minQty * 3)) * 100,
                   100
-                )
+                ) || 0 // Default to 0 if NaN
                 return (
                   <TableRow key={inv.id}>
                     <TableCell>
                       <div>
-                        <p className="font-medium">{inv.product.name}</p>
+                        <p className="font-medium">{inv.product?.name || 'Неизвестный товар'}</p>
                         <p className="text-xs text-muted-foreground">
-                          {inv.product.manufacturer}
+                          {inv.product?.manufacturer || '-'}
                         </p>
                       </div>
                     </TableCell>
@@ -259,8 +270,7 @@ function InventoryContent() {
                       <Badge variant="outline">{getStoreName(inv.storeId)}</Badge>
                     </TableCell>
                     <TableCell className="text-muted-foreground">
-                      {BEER_CATEGORIES[inv.product.category as BeerCategory] ??
-                        inv.product.category}
+                      {inv.product?.category ? (BEER_CATEGORIES[inv.product.category as BeerCategory] ?? inv.product.category) : '-'}
                     </TableCell>
                     <TableCell>
                       <span className={`font-medium ${status.color}`}>

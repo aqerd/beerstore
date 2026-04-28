@@ -7,8 +7,9 @@ export interface User {
   name: string
   email: string
   role: UserRole
-  storeId: string | null 
+  storeId: string | null
   avatar?: string
+  passwordHash?: string
 }
 
 export interface Store {

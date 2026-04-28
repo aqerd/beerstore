@@ -25,8 +25,13 @@ import { Label } from '@/components/ui/label'
 import { suppliers, getProductById } from '@/lib/mock-data'
 import { CRMLayout } from '@/components/crm/crm-layout'
 import { CrmEmptyState } from '@/components/crm/crm-empty-state'
+import { NewSaleDialog } from '@/components/crm/new-sale-dialog'
+import { useCRM } from '@/lib/store'
+import { useStores } from '@/hooks/api/useStores'
 
 function SuppliersContent() {
+  const { currentStore, currentUser } = useCRM()
+  const { stores } = useStores()
   const [searchQuery, setSearchQuery] = useState('')
   const [isDialogOpen, setIsDialogOpen] = useState(false)
 
@@ -44,56 +49,70 @@ function SuppliersContent() {
           <h1 className="text-2xl font-bold tracking-tight">Поставщики</h1>
           <p className="text-muted-foreground">Управление поставщиками и заказами</p>
         </div>
-        <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-          <DialogTrigger asChild>
-            <Button>
-              <Plus className="mr-2 h-4 w-4" />
-              Добавить поставщика
-            </Button>
-          </DialogTrigger>
-          <DialogContent className="sm:max-w-[500px]">
-            <DialogHeader>
-              <DialogTitle>Новый поставщик</DialogTitle>
-              <DialogDescription>
-                Введите данные нового поставщика
-              </DialogDescription>
-            </DialogHeader>
-            <div className="grid gap-4 py-4">
-              <div className="grid gap-2">
-                <Label htmlFor="name">Название компании</Label>
-                <Input id="name" placeholder="ООО Пивоопт" />
-              </div>
-              <div className="grid grid-cols-2 gap-4">
-                <div className="grid gap-2">
-                  <Label htmlFor="contact">Контактное лицо</Label>
-                  <Input id="contact" placeholder="Иван Иванов" />
-                </div>
-                <div className="grid gap-2">
-                  <Label htmlFor="phone">Телефон</Label>
-                  <Input id="phone" placeholder="+7 (495) 000-00-00" />
-                </div>
-              </div>
-              <div className="grid gap-2">
-                <Label htmlFor="email">Email</Label>
-                <Input id="email" type="email" placeholder="supplier@example.com" />
-              </div>
-              <div className="grid gap-2">
-                <Label htmlFor="address">Адрес</Label>
-                <Input id="address" placeholder="г. Москва, ул. Примерная, 1" />
-              </div>
-              <div className="grid gap-2">
-                <Label htmlFor="terms">Условия оплаты</Label>
-                <Input id="terms" placeholder="Отсрочка 14 дней" />
-              </div>
-            </div>
-            <DialogFooter>
-              <Button variant="outline" onClick={() => setIsDialogOpen(false)}>
-                Отмена
+        <div className="flex gap-2">
+          <NewSaleDialog 
+            onSaleCreated={() => {}} 
+            defaultStoreId={currentStore?.id || stores[0]?.id || ''} 
+            sellerId={currentUser?.id || ''} 
+            stores={stores} 
+            trigger={
+              <Button>
+                <Plus className="mr-2 h-4 w-4" />
+                Создать продажу
               </Button>
-              <Button onClick={() => setIsDialogOpen(false)}>Сохранить</Button>
-            </DialogFooter>
-          </DialogContent>
-        </Dialog>
+            }
+          />
+          <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+            <DialogTrigger asChild>
+              <Button variant="outline">
+                <Plus className="mr-2 h-4 w-4" />
+                Добавить поставщика
+              </Button>
+            </DialogTrigger>
+            <DialogContent className="sm:max-w-[500px]">
+              <DialogHeader>
+                <DialogTitle>Новый поставщик</DialogTitle>
+                <DialogDescription>
+                  Введите данные нового поставщика
+                </DialogDescription>
+              </DialogHeader>
+              <div className="grid gap-4 py-4">
+                <div className="grid gap-2">
+                  <Label htmlFor="name">Название компании</Label>
+                  <Input id="name" placeholder="ООО Пивоопт" />
+                </div>
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="grid gap-2">
+                    <Label htmlFor="contact">Контактное лицо</Label>
+                    <Input id="contact" placeholder="Иван Иванов" />
+                  </div>
+                  <div className="grid gap-2">
+                    <Label htmlFor="phone">Телефон</Label>
+                    <Input id="phone" placeholder="+7 (495) 000-00-00" />
+                  </div>
+                </div>
+                <div className="grid gap-2">
+                  <Label htmlFor="email">Email</Label>
+                  <Input id="email" type="email" placeholder="supplier@example.com" />
+                </div>
+                <div className="grid gap-2">
+                  <Label htmlFor="address">Адрес</Label>
+                  <Input id="address" placeholder="г. Москва, ул. Примерная, 1" />
+                </div>
+                <div className="grid gap-2">
+                  <Label htmlFor="terms">Условия оплаты</Label>
+                  <Input id="terms" placeholder="Отсрочка 14 дней" />
+                </div>
+              </div>
+              <DialogFooter>
+                <Button variant="outline" onClick={() => setIsDialogOpen(false)}>
+                  Отмена
+                </Button>
+                <Button onClick={() => setIsDialogOpen(false)}>Сохранить</Button>
+              </DialogFooter>
+            </DialogContent>
+          </Dialog>
+        </div>
       </div>
 
       {}
@@ -240,9 +259,17 @@ function SuppliersContent() {
                   <span className="text-xs">{supplier.deliveryDays.join(', ')}</span>
                 </div>
               </div>
-              <Button variant="outline" className="w-full mt-2">
-                Создать заказ
-              </Button>
+              <NewSaleDialog 
+                onSaleCreated={() => {}} 
+                defaultStoreId={currentStore?.id || stores[0]?.id || ''} 
+                sellerId={currentUser?.id || ''} 
+                stores={stores} 
+                trigger={
+                  <Button variant="outline" className="w-full mt-2">
+                    Создать продажу
+                  </Button>
+                }
+              />
             </CardContent>
           </Card>
         ))}

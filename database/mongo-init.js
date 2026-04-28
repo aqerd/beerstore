@@ -1,5 +1,3 @@
-// MongoDB (java profile): seed only if collections are empty
-
 db = db.getSiblingDB('golden_liquid');
 
 function seedIfEmpty(collection, docs) {
@@ -29,11 +27,21 @@ seedIfEmpty('stores', [
   },
 ]);
 
+db.users.drop();
 seedIfEmpty('users', [
+  {
+    _id: 'user-admin',
+    name: 'Администратор',
+    email: 'admin@goldenliquid.ru',
+    passwordHash: '$2a$10$x6CIWpKGOVf1wgNa/a9IvOr2QU7M7TLptchoxcQ80QQHvupQ5AeSi',
+    role: 'admin',
+    storeId: null,
+  },
   {
     _id: 'user-1',
     name: 'Иван Петров',
     email: 'manager1@goldenliquid.ru',
+    passwordHash: '$2a$10$x6CIWpKGOVf1wgNa/a9IvOr2QU7M7TLptchoxcQ80QQHvupQ5AeSi',
     role: 'manager',
     storeId: 'store-1',
   },
@@ -41,6 +49,7 @@ seedIfEmpty('users', [
     _id: 'user-2',
     name: 'Мария Сидорова',
     email: 'purchaser1@goldenliquid.ru',
+    passwordHash: '$2a$10$x6CIWpKGOVf1wgNa/a9IvOr2QU7M7TLptchoxcQ80QQHvupQ5AeSi',
     role: 'purchaser',
     storeId: null,
   },
@@ -48,11 +57,13 @@ seedIfEmpty('users', [
     _id: 'user-3',
     name: 'Алексей Козлов',
     email: 'bartender1@goldenliquid.ru',
+    passwordHash: '$2a$10$x6CIWpKGOVf1wgNa/a9IvOr2QU7M7TLptchoxcQ80QQHvupQ5AeSi',
     role: 'bartender',
     storeId: 'store-1',
   },
 ]);
 
+db.products.drop();
 seedIfEmpty('products', [
   {
     _id: 'prod-1',
@@ -114,6 +125,42 @@ seedIfEmpty('products', [
     pricePerLiter: 450,
     isActive: true,
   },
+  {
+    _id: 'prod-6',
+    name: 'Kozel Dark',
+    category: 'dark',
+    manufacturer: 'Velkopopovický Kozel',
+    country: 'Чехия',
+    abv: 3.8,
+    ibu: 14,
+    description: 'Темный лагер с карамельным вкусом',
+    pricePerLiter: 210,
+    isActive: true,
+  },
+  {
+    _id: 'prod-7',
+    name: 'Spaten Munchen',
+    category: 'lager',
+    manufacturer: 'Spaten-Franziskaner-Bräu',
+    country: 'Германия',
+    abv: 5.2,
+    ibu: 21,
+    description: 'Классическое мюнхенское светлое',
+    pricePerLiter: 250,
+    isActive: true,
+  },
+  {
+    _id: 'prod-8',
+    name: 'Weihenstephaner Vitus',
+    category: 'wheat',
+    manufacturer: 'Bayerische Staatsbrauerei Weihenstephan',
+    country: 'Германия',
+    abv: 7.7,
+    ibu: 17,
+    description: 'Крепкое пшеничное пиво (Weizenbock)',
+    pricePerLiter: 350,
+    isActive: true,
+  },
 ]);
 
 seedIfEmpty('customers', [
@@ -154,12 +201,13 @@ seedIfEmpty('customers', [
   },
 ]);
 
+db.inventory.drop();
 seedIfEmpty('inventory', [
   {
     _id: 'inv-1',
     productId: 'prod-1',
     storeId: 'store-1',
-    quantity: 150,
+    quantity: 150.5,
     minQuantity: 50,
     lastUpdated: '2025-03-30T08:00:00Z',
   },
@@ -167,7 +215,7 @@ seedIfEmpty('inventory', [
     _id: 'inv-2',
     productId: 'prod-2',
     storeId: 'store-1',
-    quantity: 80,
+    quantity: 80.0,
     minQuantity: 40,
     lastUpdated: '2025-03-30T08:00:00Z',
   },
@@ -175,7 +223,7 @@ seedIfEmpty('inventory', [
     _id: 'inv-3',
     productId: 'prod-3',
     storeId: 'store-1',
-    quantity: 25,
+    quantity: 25.0,
     minQuantity: 30,
     lastUpdated: '2025-03-30T08:00:00Z',
   },
@@ -183,7 +231,7 @@ seedIfEmpty('inventory', [
     _id: 'inv-4',
     productId: 'prod-4',
     storeId: 'store-1',
-    quantity: 60,
+    quantity: 60.0,
     minQuantity: 25,
     lastUpdated: '2025-03-30T08:00:00Z',
   },
@@ -191,7 +239,7 @@ seedIfEmpty('inventory', [
     _id: 'inv-5',
     productId: 'prod-5',
     storeId: 'store-1',
-    quantity: 40,
+    quantity: 40.0,
     minQuantity: 20,
     lastUpdated: '2025-03-30T08:00:00Z',
   },
@@ -199,7 +247,7 @@ seedIfEmpty('inventory', [
     _id: 'inv-6',
     productId: 'prod-1',
     storeId: 'store-2',
-    quantity: 200,
+    quantity: 200.0,
     minQuantity: 50,
     lastUpdated: '2025-03-30T08:00:00Z',
   },
@@ -207,8 +255,32 @@ seedIfEmpty('inventory', [
     _id: 'inv-7',
     productId: 'prod-2',
     storeId: 'store-2',
-    quantity: 45,
+    quantity: 45.0,
     minQuantity: 40,
+    lastUpdated: '2025-03-30T08:00:00Z',
+  },
+  {
+    _id: 'inv-8',
+    productId: 'prod-6',
+    storeId: 'store-1',
+    quantity: 120.0,
+    minQuantity: 30,
+    lastUpdated: '2025-03-30T08:00:00Z',
+  },
+  {
+    _id: 'inv-9',
+    productId: 'prod-7',
+    storeId: 'store-1',
+    quantity: 95.0,
+    minQuantity: 40,
+    lastUpdated: '2025-03-30T08:00:00Z',
+  },
+  {
+    _id: 'inv-10',
+    productId: 'prod-8',
+    storeId: 'store-1',
+    quantity: 15.0,
+    minQuantity: 20,
     lastUpdated: '2025-03-30T08:00:00Z',
   },
 ]);

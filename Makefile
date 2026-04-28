@@ -48,7 +48,7 @@ migrate:
 migrate-mongo:
 	@echo "Поднимаю db-java (MongoDB) и применяю database/mongo-init.js …"
 	docker compose --profile java up -d db-java
-	docker compose --profile java exec -T db-java mongosh --quiet --file /docker-entrypoint-initdb.d/mongo-init.js
+	docker compose --profile java exec db-java bash -c 'cat /docker-entrypoint-initdb.d/mongo-init.js | mongosh golden_liquid --quiet'
 	@echo "Готово: MongoDB (golden_liquid)."
 
 migrate-postgres:

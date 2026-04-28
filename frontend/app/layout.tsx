@@ -3,6 +3,8 @@ import { Geist, Geist_Mono } from 'next/font/google'
 import { Analytics } from '@vercel/analytics/next'
 import './globals.css'
 import { CRMProvider } from '@/components/crm/crm-provider'
+import { Toaster } from '@/components/ui/sonner'
+import { ThemeProvider } from '@/components/theme-provider'
 
 const _geist = Geist({ subsets: ["latin"] });
 const _geistMono = Geist_Mono({ subsets: ["latin"] });
@@ -42,9 +44,17 @@ export default function RootLayout({
   return (
     <html lang="ru" className="dark">
       <body className="font-sans antialiased">
-        <CRMProvider>
-          {children}
-        </CRMProvider>
+        <ThemeProvider
+          attribute="class"
+          defaultTheme="dark"
+          enableSystem
+          disableTransitionOnChange
+        >
+          <CRMProvider>
+            {children}
+            <Toaster position="top-right" />
+          </CRMProvider>
+        </ThemeProvider>
         {/* <Analytics /> */}
       </body>
     </html>
